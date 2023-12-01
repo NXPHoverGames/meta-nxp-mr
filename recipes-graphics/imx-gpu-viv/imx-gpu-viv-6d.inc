@@ -25,7 +25,10 @@ DEPENDS:append:mx8-nxp-bsp = " patchelf-native"
 # We depend on mesa to fill in what is missing.
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'mesa', '', d)}"
 
-EXTRA_PROVIDES = ""
+EXTRA_PROVIDES = " \
+    ${PROVIDES_OPENCL} \
+    ${PROVIDES_OPENVX} \
+"
 EXTRA_PROVIDES:append:imxgpu3d = " \
     virtual/libgl \
     virtual/libgles1 \
@@ -37,17 +40,25 @@ EXTRA_PROVIDES:append:mx8-nxp-bsp = " \
 PROVIDES:OPENVX       = ""
 PROVIDES:OPENVX:mx8-nxp-bsp   = "virtual/libopenvx"
 PROVIDES:OPENVX:mx8mm-nxp-bsp = ""
+
+PROVIDES_OPENCL = " \
+    opencl-headers \
+    opencl-clhpp \
+    opencl-icd-loader \
+    virtual/opencl-icd \
+"
+PROVIDES_OPENCL:mx8mm-nxp-bsp = ""
+
 PROVIDES += " \
     imx-gpu-viv \
     libgal-imx \
-    opencl-headers \
     virtual/egl \
     virtual/libopenvg \
-    virtual/opencl-headers \
-    virtual/opencl-icd \
     ${EXTRA_PROVIDES} \
-    ${PROVIDES:OPENVX} \
 "
+
+DEPENDS:remove = "mesa"
+PROVIDES:remove = "virtual/libgl"
 
 RPROVIDES:${PN}:imxgpu3d += "imx-gpu-viv"
 
@@ -62,13 +73,12 @@ SRC_URI = "${FSL_BIN_MIRROR}/${BPN}-${PV}.bin;fsl-eula=true"
 # Note : If you add a package here, to prevent a naming conflict see the python_anonymous() futher below
 IMX_PACKAGES_GBM     = ""
 IMX_PACKAGES_GBM:mx8-nxp-bsp = "libgbm-imx libgbm-imx-dev"
-PACKAGES =+ "libclc-imx libclc-imx-dev \
-	libgl-imx libgl-imx-dev \
+PACKAGES =+ " \
 	libgles1-imx libgles1-imx-dev \
 	libgles2-imx libgles2-imx-dev \
 	libgles3-imx-dev \
 	libglslc-imx libglslc-imx-dev \
-	libopencl-imx libopencl-imx-dev \
+	${PACKAGES_OPENCL} \
 	libopenvg-imx libopenvg-imx-dev \
 	libvdk-imx libvdk-imx-dev \
 	libegl-imx libegl-imx-dev \
@@ -79,10 +89,21 @@ PACKAGES =+ "libclc-imx libclc-imx-dev \
 	libwayland-viv-imx libwayland-viv-imx-dev \
 	libgc-wayland-protocol-imx libgc-wayland-protocol-imx-dev \
 	imx-gpu-viv-tools \
-	libvulkan-imx libvulkan-imx-dev \
-	libopenvx-imx libopenvx-imx-dev \
+	${PACKAGES_VULKAN} \
+	${PACKAGES_OPENVX} \
     libnn-imx \
 "
+PACKAGES_OPENCL               = "libclc-imx libclc-imx-dev libopencl-imx libopencl-imx-dev"
+PACKAGES_OPENCL:mx8mm-nxp-bsp = ""
+
+PACKAGES_OPENVX = \
+    "${@bb.utils.contains("PROVIDES_OPENVX", "virtual/libopenvx", \
+        "libopenvx-imx libopenvx-imx-dev", "", d)}"
+
+PACKAGES_VULKAN               = ""
+PACKAGES_VULKAN:imxvulkan     = "libvulkan-imx libvulkan-imx-dev"
+PACKAGES_VULKAN:mx8mm-nxp-bsp = "libvulkan-imx libvulkan-imx-dev"
+
 python __anonymous () {
         has_vivante_kernel_driver_support = (d.getVar('MACHINE_HAS_VIVANTE_KERNEL_DRIVER_SUPPORT') or '0')
         if has_vivante_kernel_driver_support != '1':
@@ -207,6 +228,15 @@ do_install () {
 
     fi
 
+    if [ -z "${PACKAGES_OPENCL}" ]; then
+        set -f
+        for f in ${FILES:libopencl-imx} ${FILES:libopencl-imx-dev} ${FILES:libclc-imx}; do
+            set +f
+            rm -rf ${D}$f
+        done
+        rm -rf ${D}/opt/viv_samples/cl11
+    fi
+
     # Install Vendor ICDs for OpenCL's installable client driver loader (ICDs Loader)
     install -d ${D}${sysconfdir}/OpenCL/vendors/
     install -m 0644 ${S}/gpu-core/etc/Vivante.icd ${D}${sysconfdir}/OpenCL/vendors/Vivante.icd
@@ -291,7 +321,10 @@ INSANE_SKIP:libvulkan-imx += "dev-so"
 
 FILES:libopenvx-imx = "${libdir}/libOpenVX${SOLIBS} ${libdir}/libOpenVX${REALSOLIBS} ${libdir}/libOvx*${SOLIBS} ${libdir}/libOpenVXC${SOLIBS} ${libdir}/libOpenVXU${SOLIBS} ${libdir}/libArchModelSw${SOLIBS}"
 FILES:libopenvx-imx-dev = "${includedir}/VX ${libdir}/libOpenVX${SOLIBSDEV}"
-RDEPENDS:libopenvx-imx = "libnn-imx"
+RDEPENDS:libopenvx-imx = "libnn-imx ${OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES}"
+OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES               = ""
+OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES:mx8qm-nxp-bsp = "libclc-imx libopencl-imx-dev"
+OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES:mx8mp-nxp-bsp = "libclc-imx libopencl-imx-dev"
 INSANE_SKIP:libopenvx-imx += "dev-so dev-deps"
 
 FILES:libgl-imx = "${libdir}/libGL${REALSOLIBS}"
@@ -344,7 +377,7 @@ RDEPENDS:libvivante-dri-imx = "libdrm"
 
 INSANE_SKIP:libwayland-viv-imx += "dev-so"
 FILES:libwayland-viv-imx =  "${libdir}/libwayland-viv${REALSOLIBS}  ${libdir}/libwayland-viv${SOLIBS}"
-FILES:libwayland-viv-imx-dev = "${includedir}/wayland-viv ${libdir})/libwayland-viv${SOLIBSDEV} ${libdir}/pkgconfig/wayland-viv.pc"
+FILES:libwayland-viv-imx-dev = "${includedir}/wayland-viv ${libdir}/libwayland-viv${SOLIBSDEV} ${libdir}/pkgconfig/wayland-viv.pc"
 RPROVIDES:libwayland-viv-imx += "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'xf86-video-imx-vivante', '', d)}"
 
 INSANE_SKIP:libgc-wayland-protocol-imx += "dev-so"
