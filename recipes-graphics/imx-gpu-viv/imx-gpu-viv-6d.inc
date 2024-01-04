@@ -37,9 +37,9 @@ EXTRA_PROVIDES:append:imxgpu3d = " \
 EXTRA_PROVIDES:append:mx8-nxp-bsp = " \
     virtual/libgbm \
 "
-PROVIDES:OPENVX       = ""
-PROVIDES:OPENVX:mx8-nxp-bsp   = "virtual/libopenvx"
-PROVIDES:OPENVX:mx8mm-nxp-bsp = ""
+PROVIDES_OPENVX                  = ""
+PROVIDES_OPENVX:mx8-nxp-bsp      = "virtual/libopenvx"
+PROVIDES_OPENVX:mx8mm-nxp-bsp    = ""
 
 PROVIDES_OPENCL = " \
     opencl-headers \
