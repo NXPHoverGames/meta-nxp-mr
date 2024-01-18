@@ -321,10 +321,7 @@ INSANE_SKIP:libvulkan-imx += "dev-so"
 
 FILES:libopenvx-imx = "${libdir}/libOpenVX${SOLIBS} ${libdir}/libOpenVX${REALSOLIBS} ${libdir}/libOvx*${SOLIBS} ${libdir}/libOpenVXC${SOLIBS} ${libdir}/libOpenVXU${SOLIBS} ${libdir}/libArchModelSw${SOLIBS}"
 FILES:libopenvx-imx-dev = "${includedir}/VX ${libdir}/libOpenVX${SOLIBSDEV}"
-RDEPENDS:libopenvx-imx = "libnn-imx ${OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES}"
-OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES               = ""
-OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES:mx8qm-nxp-bsp = "libclc-imx libopencl-imx-dev"
-OPENCL_VX_INTRINSIC_EXTENSION_PACKAGES:mx8mp-nxp-bsp = "libclc-imx libopencl-imx-dev"
+RDEPENDS:libopenvx-imx = "libnn-imx"
 INSANE_SKIP:libopenvx-imx += "dev-so dev-deps"
 
 FILES:libgl-imx = "${libdir}/libGL${REALSOLIBS}"
