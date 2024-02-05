@@ -237,6 +237,14 @@ do_install () {
         rm -rf ${D}/opt/viv_samples/cl11
     fi
 
+    if [ -z "${PACKAGES_OPENVX}" ]; then
+        set -f
+        for f in ${FILES:libopenvx-imx} ${FILES:libopenvx-imx-dev}; do
+            set +f
+            rm -rf ${D}$f
+        done
+    fi
+
     # Install Vendor ICDs for OpenCL's installable client driver loader (ICDs Loader)
     install -d ${D}${sysconfdir}/OpenCL/vendors/
     install -m 0644 ${S}/gpu-core/etc/Vivante.icd ${D}${sysconfdir}/OpenCL/vendors/Vivante.icd
