@@ -1,0 +1,8 @@
+require imx-gpu-viv-6d.inc
+
+LIC_FILES_CHKSUM = "file://COPYING;md5=44a8052c384584ba09077e85a3d1654f"
+
+SRC_URI[md5sum] = "480bc4ded71580d50f976a5027fcf067"
+SRC_URI[sha256sum] = "264ed3a838213c33313c4c258e505e76b846f7295d94f9f39dbe69e442067f34"
+
+COMPATIBLE_MACHINE = "(mx8-nxp-bsp)"
