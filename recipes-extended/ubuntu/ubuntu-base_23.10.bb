@@ -7,6 +7,7 @@ APTGET_EXTRA_PACKAGES += " \
     udhcpc \
     python3.10 \
     freeglut3 \
+    freeglut3-dev \
     libglu1-mesa \
     python3.11 \
 "
