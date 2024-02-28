@@ -846,13 +846,14 @@ fakeroot aptget_update_end() {
         xf="/__etc_apt_apt.conf.d_01yoctoinstallproxies__"
         aptget_delete_faketool "/etc/apt/apt.conf.d/01yoctoinstallproxies" $xf
         rm -f "${APTGET_CHROOT_DIR}/etc/apt/apt.conf.d/01yoctoinstallproxies"
-
+        rm -f ${APTGET_CHROOT_DIR}/$xf
         # Remove our temporary helper again
         aptget_delete_fakeproc
 
 	# Now that we are done in qemu land, we reinstate the original
 	# networking config of our target rootfs.
         aptget_delete_faketool "/etc/hosts" "/__etchosts__"
+        rm -f ${APTGET_CHROOT_DIR}/__etchosts__
         #aptget_delete_faketool "/etc/resolv.conf" "/__etcresolvconf__"
         rm -f "${APTGET_CHROOT_DIR}/__etcresolvconf__"
         aptget_restore_file "/etc/resolv.conf"
