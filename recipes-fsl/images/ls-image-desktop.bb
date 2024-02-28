@@ -36,7 +36,6 @@ IMAGE_INSTALL += "\
 # GPU driver
 IMAGE_INSTALL += " \
     wayland-protocols \
-    libclc-imx libclc-imx-dev \
     libgles1-imx libgles1-imx-dev \
     libgles2-imx libgles2-imx-dev \
     libgles3-imx-dev \
