@@ -71,8 +71,6 @@ RPROVIDES:${PN}:ubuntu += " \
 rtld(GNU_HASH) \
 libc6 \
 libc6-utils \
-libc6-extra-nss \
-libc6-thread-db \
 libc6-pcprofile \
 libcrypto1.1 \
 libgcc1-dev \
