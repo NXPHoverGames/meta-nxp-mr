@@ -1,10 +1,5 @@
 # We currently support recipies for:
-# - 16.04.5
-# - 18.04.3
-#UBUNTU_TARGET_VERSION ?= "16.04.5"
-#UBUNTU_TARGET_VERSION ?= "18.04.3"
-#UBUNTU_TARGET_VERSION ?= "20.04.3"
-UBUNTU_TARGET_VERSION ?= "22.04.2"
+UBUNTU_TARGET_VERSION ?= "23.10"
 
 UBUNTU_TARGET_MAJORVERSION ?= "${@d.getVar('UBUNTU_TARGET_VERSION', True).rsplit('.')[0]}"
 UBUNTU_TARGET_MINORVERSION ?= "${@d.getVar('UBUNTU_TARGET_VERSION', True).rsplit('.')[1]}"
@@ -25,10 +20,8 @@ INITRAMFS_IMAGE = ""
 #POSTINST_INTERCEPTS_DIR = "<--InVaLiD-->"
 
 GCCVERSION = '${@ \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "20.04", "9.3.0", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "22.04", "11.2.0", \
+    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "23.10", "13.2.0", \
     "unsupportedubuntuversion" \
-    , d) \
     , d)}'
 
 # The Yocto glibc version must not exceed the Desktop glibc version
@@ -44,29 +37,18 @@ GCCVERSION = '${@ \
 # Desktop 18.04: max glibc 2.27...
 # Desktop 20.x: max glibc 2.31...
 GLIBCVERSION = '${@ \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "16.04", "2.23", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "18.04", "2.27", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "20.04", "2.31%", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "22.04", "2.35", \
+    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "23.10", "2.38", \
     "unsupportedubuntuversion" \
-    , d) \
-    , d) \
-    , d) \
     , d)}'
 PREFERRED_VERSION_cross-localedef-native = "${GLIBCVERSION}"
-BINUVERSION="2.38"
+
+BINUVERSION="2.41"
 
 # More recent Desktop versions work with symlinks for the base
 # directories. We can't refer to symlink based files
 DISTRO_FEATURES:append = '${@ \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "16.04", "", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "18.04", "", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "20.04", " usrmerge", \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "22.04", " usrmerge", \
+    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "23.10", " usrmerge", \
    "unsupportedubuntuversion" \
-    , d) \
-    , d) \
-    , d) \
     , d)}'
 
 PREFERRED_PROVIDER_bison-native = "bison"
