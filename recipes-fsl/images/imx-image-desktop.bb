@@ -49,6 +49,9 @@ APTGET_EXTRA_PACKAGES += "\
 	squashfs-tools golang-github-snapcore-snapd-dev golang-github-ubuntu-core-snappy-dev \
 	snap-confine snapd-xdg-open snapd ubuntu-core-launcher ubuntu-core-snapd-units ubuntu-snappy-cli ubuntu-snappy \
         libqt5gui5-gles libqt5quick5-gles qtwayland5 \
+        libclutter-1.0-0 libclutter-1.0-dev \
+        libclutter-gtk-1.0-0 libclutter-gtk-1.0-dev  \
+        libcogl-pango20 libcogl-path20 \
 "
 
 ##############################################################################

@@ -89,8 +89,7 @@ libblkid1 libc6-dbg libcairo2 libcairo-dbg  \
 libcairo-dev libcairo-gobject2 libcairo-script-interpreter2  \
 libcanberra libcanberra-dev libcanberra-gtk2 libcanberra-gtk3  \
 libcap libcap2 libcap-dbg libcap-dev libcap-ng0 libcap-ng-dev  \
-libclutter-gtk-1.0-0 libclutter-gtk-1.0-dev  \
-libcogl-gles2-20 libcogl-pango20 libcogl-path20 \
+libcogl-gles2-20 \
 libcrypt libcrypt-dbg libcrypt-dev libcrypto libcrypto1.1 libcrypto3  \
 libdaemon0 libdaemon-dev libdbus-1-3 libdbus-glib-1-2 libdbus-glib-1-dev  \
 libdebuginfod1 libdrm-amdgpu libdrm-dev libdrm-etnaviv  \
