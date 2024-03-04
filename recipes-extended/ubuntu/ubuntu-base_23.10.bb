@@ -3,10 +3,8 @@ require ubuntu-base-image.inc
 SECTION = "devel"
 
 APTGET_EXTRA_PACKAGES += " \
-    libtinfo5 \
     udhcpc \
     python3.10 \
-    freeglut3 \
     freeglut3-dev \
     libglu1-mesa \
     python3.11 \
