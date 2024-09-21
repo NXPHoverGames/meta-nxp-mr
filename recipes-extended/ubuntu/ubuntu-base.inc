@@ -21,9 +21,11 @@ do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 do_populate_sdk[noexec] = "1"
 
-# disable useradd when install base image early
-# rootfs build can support useradd from local.conf.
-APTGET_ADD_USERS = ""
+# Add user with password user and default shell bash
+USER_SHELL_BASH ?= "/bin/bash"
+# Password: user
+USER_PASSWD_USER ?= "zHipsIr46vtZk"
+APTGET_ADD_USERS ?= "user:${USER_PASSWD_USER}:${USER_SHELL_BASH}"
 
 # As this package will never be built/compiled, we do not really need
 # to look at any build- or runtime-dependencies or debug symbols!
@@ -48,6 +50,15 @@ APTGET_EXTRA_PACKAGES += "\
 	sudo htop iproute2 \
 	whiptail \
 	kmod gnupg net-tools netbase \
+	netplan.io \
+    network-manager \
+    iputils-ping \
+    nano \
+    vim \
+    bash-completion \
+    locales \
+    curl \
+    wget \
 "
 # We *MUST* provide all Desktop packages in ubuntu-base that we need
 # to install Yocto packages! Packages installed in images via
@@ -93,6 +104,7 @@ FILES:${PN} += "/usr/share /usr/lib /usr/local /usr/games /usr/src"
 FILES:${PN} += "/dev"
 FILES:${PN} += "/lib"
 FILES:${PN} += "/run /dev /lib /media /boot /tmp /proc /opt /mnt /home /srv /sys /run /root"
+FILES:${PN} += "/lib.usr-is-merged /sbin.usr-is-merged /bin.usr-is-merged"
 FILES:${PN}-dbg:append = " ${localstatedir}/lib/dpkg/info/.debug"
 FILES:${PN}-dbg:${TRANSLATED_TARGET_ARCH} += "${base_libdir}/${TRANSLATED_TARGET_ARCH}-linux-gnu/.debug"
 

@@ -140,8 +140,10 @@ PSEUDO_CHROOT_FORCED="\
 /usr/local/sbin:\
 /usr/bin:\
 /usr/sbin:\
+/usr/lib:\
 /bin:\
 /sbin:\
+/lib:\
 /root:\
 /*:\
 "
@@ -162,9 +164,30 @@ ${DPKG_NATIVE}:\
 ENV_HOST_PROXIES ?= "http_proxy=${http_proxy}"
 APTGET_HOST_PROXIES ?= ""
 APTGET_EXECUTABLE ?= "/usr/bin/apt-get"
+APT_EXECUTABLE ?= "/usr/bin/apt"
+DPKG_EXECUTABLE ?= "/usr/bin/dpkg"
 APTGET_DEFAULT_OPTS ?= "-qy -o=Dpkg::Use-Pty=0"
 
+APTGET_DEBUG_SHELL ?= "0"
+
+
+aptget_debug_shell() {
+        if [ ${APTGET_DEBUG_SHELL} -ne 0 ]; then
+                set -x
+        fi
+}
+
+# We want to ensure that during packaging we use the same
+# passwd/group file that we used during build up of the rootfs.
+PSEUDO_PASSWD="${APTGET_CHROOT_DIR}:${STAGING_DIR_NATIVE}"
+
 aptget_update_presetvars() {
+	aptget_debug_shell
+	# To avoid useless and complicated directory references outside
+	# our chroot that just make processing more complex and time
+	# consuming, we work in the chroot directory
+	cd "${APTGET_CHROOT_DIR}"
+ 
 	export PSEUDO_PASSWD="${APTGET_CHROOT_DIR}:${STAGING_DIR_NATIVE}"
 
 	# All this depends on the updated pseudo-native with better 
@@ -327,13 +350,13 @@ fakeroot aptget_install_faketool() {
 }
 
 fakeroot aptget_delete_faketools() {
-        aptget_delete_faketool "/bin/lsmod"         "/__fake_lsmod__"
-        xt="/bin/udevadm"
+        aptget_delete_faketool "/usr/bin/lsmod"         "/__fake_lsmod__"
+        xt="/usr/bin/udevadm"
         if ! aptget_file_is_preserved $xt; then
-                xt="/sbin/udevadm"
+                xt="/usr/sbin/udevadm"
         fi
         aptget_delete_faketool $xt                  "/__fake_udevadm__"
-        aptget_delete_faketool "/bin/mountpoint"    "/__fake_mountpoint__"
+        aptget_delete_faketool "/usr/bin/mountpoint"    "/__fake_mountpoint__"
         aptget_delete_faketool "/usr/bin/systemctl" "/__fake_systemctl__"
         aptget_delete_faketool "/usr/bin/dbus-send" "/__fake_dbus-send__"
         aptget_delete_faketool "/usr/bin/dpkg"      "/__dpkgwrapper__"
@@ -355,7 +378,7 @@ echo 'Module                  Size  Used by'
 EOF
                 chmod a+x "${APTGET_CHROOT_DIR}$xf"
         fi
-        aptget_install_faketool "/bin/lsmod"            $xf
+        aptget_install_faketool "/usr/bin/lsmod"            $xf
 
         # Turns out that a good number of package installs trigger
         # udevadm. In the past this was benign and ignored in chroot
@@ -376,9 +399,9 @@ udevadm.yocto "\$@"
 EOF
                 chmod a+x "${APTGET_CHROOT_DIR}$xf"
         fi
-        xt="/bin/udevadm"
+        xt="/usr/bin/udevadm"
         if [ ! -e "${APTGET_CHROOT_DIR}$xt" ]; then
-                xt="/sbin/udevadm"
+                xt="/usr/sbin/udevadm"
         fi
         aptget_install_faketool $xt                     $xf
 
@@ -403,7 +426,7 @@ mountpoint.yocto "\$@"
 EOF
                 chmod a+x "${APTGET_CHROOT_DIR}$xf"
         fi
-        aptget_install_faketool "/bin/mountpoint"       $xf
+        aptget_install_faketool "/usr/bin/mountpoint"       $xf
 
         # Reloading system daemons causes log issues, so we want to
         # avoid that. We can't reload anything offline anyway.
@@ -492,9 +515,28 @@ fakeroot aptget_run_aptget() {
         xd=`date -R`
         bbnote "${xd}: ${APTGET_EXECUTABLE} ${APTGET_DEFAULT_OPTS} $@"
         aptget_install_faketools
+        export PWD="/"
         test $aptgetfailure -ne 0 || chroot "${APTGET_CHROOT_DIR}" ${APTGET_EXECUTABLE} ${APTGET_DEFAULT_OPTS} "$@" || aptgetfailure=1
         aptget_delete_faketools
 }
+
+fakeroot aptget_run_apt() {
+        xd=`date -R`
+        bbnote "${xd}: ${APTGET_EXECUTABLE} ${APTGET_DEFAULT_OPTS} $@"
+        aptget_install_faketools
+        export PWD="/"
+        test $aptgetfailure -ne 0 || chroot "${APTGET_CHROOT_DIR}" ${APT_EXECUTABLE} "$@" || aptgetfailure=1
+        aptget_delete_faketools
+}
+
+fakeroot aptget_run_dpkg() {
+        xd=`date -R`
+        bbnote "${xd}: ${DPKG_EXECUTABLE} ${APTGET_DEFAULT_OPTS} $@"
+        export PWD="/"
+        test $aptgetfailure -ne 0 || chroot "${APTGET_CHROOT_DIR}" ${DPKG_EXECUTABLE} "$@" || aptgetfailure=1
+}
+
+
 
 fakeroot aptget_populate_cache_from_sstate() {
 	if [ -e "${APTGET_CACHE_DIR}" ]; then
@@ -563,6 +605,7 @@ END_USER
 			fi
 
 			if [ -z "`cat ${APTGET_CHROOT_DIR}/etc/passwd | grep $user_name`" ]; then
+                                chroot "${APTGET_CHROOT_DIR}" /usr/sbin/groupadd render
 				chroot "${APTGET_CHROOT_DIR}" /usr/sbin/useradd -p "$user_passwd" -U -G sudo,users,video,render,audio,dialout -m "$user_name" $user_shell_opt
 			fi
 
@@ -619,6 +662,34 @@ END_USER
 	# a prior run, prepopulate the package cache locally to avoid
 	# costly downloads
 	aptget_populate_cache_from_sstate
+ 
+        # dpkg preinst and postinst fixes
+        # This solves 2 problems
+        # preinst usrmerge fails with faketools on systemd and udev
+        # postinst fails on systemd, polkit and udev with
+        # Assertion 'path_is_absolute(p)' failed at src/basic/chase.c:648, function chase(). Aborting.
+        # https://github.com/systemd/systemd/issues/28458
+        # Seems have to do with chroot and statx implemenation
+        aptget_run_aptget -d download systemd
+        aptget_run_dpkg --unpack systemd*.deb 
+        chroot "${APTGET_CHROOT_DIR}" /usr/bin/rm /var/lib/dpkg/info/systemd.postinst
+        aptget_run_aptget -d download systemd-resolved
+        aptget_run_dpkg --unpack systemd-resolved*.deb 
+        chroot "${APTGET_CHROOT_DIR}" /usr/bin/rm /var/lib/dpkg/info/systemd-resolved.postinst
+        aptget_run_aptget -d download systemd-timesyncd
+        aptget_run_dpkg --unpack systemd-timesyncd*.deb 
+        chroot "${APTGET_CHROOT_DIR}" /usr/bin/rm /var/lib/dpkg/info/systemd-timesyncd.postinst
+        aptget_run_aptget -d download polkitd
+        aptget_run_dpkg --unpack polkitd*.deb 
+        chroot "${APTGET_CHROOT_DIR}" /usr/bin/rm /var/lib/dpkg/info/polkitd.postinst
+        aptget_run_aptget -d download udev
+        aptget_run_dpkg --unpack udev*.deb 
+        chroot "${APTGET_CHROOT_DIR}" /usr/bin/rm /var/lib/dpkg/info/udev.postinst
+        aptget_run_aptget -d download libpaper1
+        aptget_run_dpkg --unpack libpaper1*.deb 
+        chroot "${APTGET_CHROOT_DIR}" /usr/bin/rm /var/lib/dpkg/info/libpaper1:arm64.postinst
+        aptget_run_apt -y --fix-broken install
+        rm ${APTGET_CHROOT_DIR}/*.deb
 
         # See that everything is downloaded first. This is an
         # optimization which will help to avoid failures late in the
@@ -671,7 +742,7 @@ END_USER
 		# variables in the shell.
 		x="${APTGET_EXTRA_PPA}"
 		for ppa in $x; do
-			IFS=';' read -r ppa_addr ppa_server ppa_hash ppa_type ppa_file_orig <<END_PPA
+			IFS=';' read -r ppa_addr gpg_uri gpg_file ppa_type ppa_file_orig <<END_PPA
 $ppa
 END_PPA
 
@@ -688,27 +759,13 @@ END_PPA
 			else
 				ppa_file="/etc/apt/sources.list"
 			fi
-			ppa_proxy=""
-			if [ -n "$ENV_HTTP_PROXY" ]; then
-				if [ -n "$APTGET_GPG_BROKEN" ]; then
-					ppa_proxy="-proxy=$ENV_HTTP_PROXY"
-				else
-					ppa_proxy="--keyserver-options http-proxy=$ENV_HTTP_PROXY"
-				fi
-			fi
 
-			echo >>"${APTGET_CHROOT_DIR}/$ppa_file" "$ppa_type $ppa_addr $DISTRO_NAME main"
-			if [ -n "$APTGET_GPG_BROKEN" ]; then
+			echo >>"${APTGET_CHROOT_DIR}/$ppa_file" "$ppa_type [arch=arm64 signed-by=/usr/share/keyrings/$gpg_file] $ppa_addr $DISTRO_NAME main"
 				HTTPPPASERVER=`echo $ppa_server | sed "s/hkp:/http:/g"`
-				mkdir -p "${APTGET_CHROOT_DIR}/tmp/gpg"
-                                mkdir -p "${APTGET_CHROOT_DIR}/etc/apt/trusted.gpg.d/"
-				chmod 0600 "${APTGET_CHROOT_DIR}/tmp/gpg"
-				chroot "${APTGET_CHROOT_DIR}" /usr/bin/curl -sL "$HTTPPPASERVER/pks/lookup?op=get&search=0x$ppa_hash" | chroot "${APTGET_CHROOT_DIR}" /usr/bin/gpg --homedir /tmp/gpg --import || true
-				chroot "${APTGET_CHROOT_DIR}" /usr/bin/gpg --homedir /tmp/gpg --export $ppa_hash > "${APTGET_CHROOT_DIR}/etc/apt/trusted.gpg.d/$ppa_file_orig.gpg"
-				rm -rf "${APTGET_CHROOT_DIR}/tmp/gpg"
-			else
-				chroot "${APTGET_CHROOT_DIR}" /usr/bin/apt-key adv --keyserver $ppa_server $ppa_proxy --recv-key $ppa_hash
-			fi
+				mkdir -p "${APTGET_CHROOT_DIR}/usr/share"
+                                mkdir -p "${APTGET_CHROOT_DIR}/usr/share/keyrings"
+				chroot "${APTGET_CHROOT_DIR}" /usr/bin/curl -sSL "$gpg_uri" -o "/usr/share/keyrings/$gpg_file"
+		
 		done
                 chroot "${APTGET_CHROOT_DIR}" ${APTGET_EXECUTABLE} ${APTGET_DEFAULT_OPTS} update
 	fi

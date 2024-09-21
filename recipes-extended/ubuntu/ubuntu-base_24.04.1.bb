@@ -1,37 +1,17 @@
 SUMMARY = "A prebuilt Desktop Base image as baseline for custom work"
-require ubuntu-license.inc
+require ubuntu-base-image.inc
 SECTION = "devel"
 
-# Desktop 24.04.1 baseline
-SRC_URI[md5sum] = "46c4c6c387ceefbd82762bf667060be8"
-SRC_URI[sha256sum] = "7700539236d24c31c3eea1d5345eba5ee0353a1bac7d91ea5720b399b27f3cb4"
 
-require ubuntu-base.inc
-
-# There are some basic differences between different Desktop versions.
-# We try not to address them in the generic recipe
-APTGET_EXTRA_PACKAGES += ""
-
-# Desktop 20 unifies things and turns some things into symlinks. We
-# solve this with Yocto "usrmerge" but that isn't quite enough.
-# We still need to ship the symlinks.
-# We also need to remove the udev reference as apparently bitbake.conf
-# isn't quite adapted to usrmerge there.
-FILES:${PN}:remove = "/lib/udev"
-FILES:${PN} += "/bin"
-FILES:${PN} += "/sbin"
-FILES:${PN} += "/lib"
-
+APTGET_EXTRA_PACKAGES += " \
+    libdebuginfod1 \
+"
 # The downside of not having the symlink destination content is that we
 # are missing a few basic files that are must have for dependencies.
 RPROVIDES:${PN}:ubuntu += " \
     /bin/sh \
     /bin/bash \
     /bin/dash \
-"
-
-APTGET_EXTRA_PACKAGES += " \
-    libdebuginfod1 \
 "
 
 # Extra packages that Desktop will replace and thus enables the use of 
@@ -60,16 +40,18 @@ YOCTO-DEPENDS-LIST:append = " \
 "
 # imx lib conflicts
 YOCTO-DEPENDS-LIST:append = " \
-    adwaita-icon-theme-symbolic alsa-ucm-conf alsa-utils-alsactl \
+    adwaita-icon-theme-symbolic alsa-utils-alsactl \
     base-files bzip2-dev ca-certificates dbus desktop-file-utils \
     e2fsprogs-e2fsck gsettings-desktop-schemas kmod \
-    libpam-runtime libgtk-3.0 libgtk-4.0 gtk+3 \
-    libxcvt libx11-locale libglib-2.0-utils libgudev-1.0-0 libglib-2.0-0 \
+    libpam-runtime libgtk-3.0 gtk+3 \
+    libx11-locale libglib-2.0-0 \
     shadow shadow-base update-alternatives-opkg \
-    systemd \
     openssl openssl-conf openssl-dev elfutils \
     perl udev udev-hwdb upower util-linux-lsblk xrandr xkbcomp \
+    systemd systemd-udev-rules libglib-2.0-utils ldconfig systemd-extra-utils \
+    alsa-base libao-common \
 "
+#    libgudev-1.0-0 libgudev-1.0-dbg libgudev-1.0-dev \
 # others 
 YOCTO-DEPENDS-LIST:append = " \
 alsa-topology-conf attr attr-dev avahi-daemon avahi-dev  \
@@ -86,53 +68,57 @@ lame lame-dev libasm1 libasound2 libatk-1.0-0 libatk-bridge-2.0-0  \
 libatomic-dev libatomic-ops libatomic-ops-dev libatopology2  \
 libatspi0 libattr1 libavahi-client3 libavahi-common3  \
 libavahi-core7 libavahi-glib1 libavahi-gobject0  \
-libblkid1 libc6-dbg  \
-libcanberra libcanberra-dev libcanberra-gtk2 libcanberra-gtk3  \
+libblkid1 libc6-dbg libcairo-dbg  \
+libcairo-dev  \
+libcanberra-dev libcanberra-gtk2  \
 libcap libcap2 libcap-dbg libcap-dev libcap-ng0 libcap-ng-dev  \
 libcogl-gles2-20 \
 libcrypt libcrypt-dbg libcrypt-dev libcrypto libcrypto1.1 libcrypto3  \
 libdaemon0 libdaemon-dev libdbus-1-3 libdbus-glib-1-2 libdbus-glib-1-dev  \
 libdebuginfod1 libdrm-amdgpu libdrm-dev libdrm-etnaviv  \
 libdrm-exynos libdrm-freedreno libdrm-intel libdrm-nouveau  \
-libdrm-omap libdrm-radeon libdw1 libelf1 libepoxy0 libepoxy-dev  \
+libdrm-omap libdrm-radeon libdw1 libelf1  \
 libexpat1 libexpat-dbg libexpat-dev libfdisk1  \
 libffi7 libffi-dbg libffi-dev  \
-libfontenc1 libfontenc-dev  \
-libfribidi0 libfribidi-dbg libfribidi-dev  \
+libfontconfig-dbg libfontconfig-dev  \
+libfreetype-dbg libfreetype-dev  \
+libfribidi-dbg libfribidi-dev  \
 libgcc libgcc1 libgcc-s-dbg  \
+libgdk-pixbuf-2.0-loader-gif libgdk-pixbuf-2.0-loader-jpeg  \
+libgdk-pixbuf-2.0-loader-png libgdk-pixbuf-2.0-loader-xpm libgdk-pixbuf-xlib-2.0-0  \
 libgtk-2.0 libglib-2.0-dbg libglib-2.0-dev \
 libgmp10 libgmp-dbg libgmp-dev libgmpxx4  \
 libgnutls30 libgnutls-dev libgnutls-openssl27 libgnutlsxx28  \
-libgudev-1.0-dbg libgudev-1.0-dev  \
-libharfbuzz0 libharfbuzz-dbg libharfbuzz-dev  \
+libharfbuzz-dbg libharfbuzz-dev  \
 libical libical-dev  \
 libice6 libice-dev  \
 libicudata64 libicudata67 libicui18n64 libicui18n67  \
 libicuio64 libicutu64 libicuuc64 libicuuc67  \
 libidn2-0 libidn2-dbg libidn2-dev  \
 libinput10 libjpeg-dbg libjpeg-dev  \
-libjson-glib-1.0-0 libjson-glib-1.0-dev  \
-libkmod2 libltdl7 liblzma5 libmount1  \
-libnss-mdns  \
+libkmod2 liblzma5  \
+libmp3lame-dev libnss-mdns  \
+libogg-dbg libogg-dev  \
 libpam libpam-dev libpci3  \
 libpciaccess0 libpciaccess-dbg libpciaccess-dev  \
 libpcrecpp0 libpcre-dbg libpcre-dev libpcreposix0  \
 libpsl5 libpsl-dbg libpsl-dev  \
-libpthread-stubs-dev  \
-libreadline-dev librsvg-2-2 librsvg-2-dbg librsvg-2-dev  \
-libsbc1 libsbc-dbg libsbc-dev  \
+libpthread-stubs-dev libpulse-mainloop-glib0 libpulse-simple0  \
+libreadline-dev  \
+libsbc-dbg libsbc-dev  \
 libsm6 libsmartcols1 libsm-dev  \
-libsndfile1 libsndfile-dbg libsndfile-dev  \
+libsndfile-dbg libsndfile-dev  \
 libsoup-2.4 libsoup-2.4-dbg libsoup-2.4-dev  \
+libspeex-dbg libspeex-dev libspeexdsp1 libspeexdsp-dev  \
 libsqlite3-0 libsqlite3-dev  \
 libssl libssl1.1 libssl3  \
 libstdc++6 libstdc++-dev libsysfs2  libsystemd0  \
-libtag1 libtag-c0 libtag-dbg libtag-dev  \
+libtag-c0 libtag-dbg libtag-dev  \
 libticw5 libtool libtool-dev libturbojpeg0 libudev1  \
 libunistring2 libunistring-dbg libunistring-dev  \
-libunwind libusb-1.0-0 libusb-1.0-dbg libusb-1.0-dev  \
+libunwind \
 libuuid1 \
-libwebp libx11-6 libx11-dbg libx11-dev libx11-xcb1  \
+libx11-6 libx11-dbg libx11-dev libx11-xcb1  \
 libxau6 libxau-dbg libxau-dev  \
 libxcb1 libxcb-composite0 libxcb-damage0 libxcb-dbg  \
 libxcb-dev libxcb-dpms0 libxcb-dri2-0 libxcb-dri3-0  \
@@ -141,22 +127,21 @@ libxcb-res0 libxcb-screensaver0  \
 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-util1  \
 libxcb-util-dev libxcb-xf86dri0 libxcb-xfixes0 libxcb-xinerama0  \
 libxcb-xinput0 libxcb-xkb1 libxcb-xtest0 libxcb-xv0 libxcb-xvmc0  \
-libxcomposite1 libxcomposite-dev libxcursor1 libxcursor-dev  \
+libxcomposite-dev libxcursor-dev  \
 libxdmcp6 libxdmcp-dbg libxdmcp-dev  \
 libxext6 libxext-dbg libxext-dev libxfixes3 libxfixes-dbg libxfixes-dev  \
-libxfont2-2 libxfont2-dev libxft2 libxft-dbg libxft-dev  \
-libxi6 libxi-dev libxkbcommon libxkbcommon0 libxkbcommon-dev  \
+libxft-dbg libxft-dev  \
+libxi6 libxi-dev  \
 libxkbfile1 libxkbfile-dev libxml2 libxml2-dbg libxml2-dev  \
-libxrandr2 libxrandr-dev libxrender1 libxrender-dbg libxrender-dev  \
-libxshmfence1 libxshmfence-dev libxslt libxtst6 libxtst-dev  \
-libxxf86vm1 libxxf86vm-dev  \
+libxrandr-dev libxrender-dbg libxrender-dev  \
+libxshmfence1 libxshmfence-dev libxtst-dev  \
+libxv-dbg libxv-dev libxxf86vm1 libxxf86vm-dev  \
 libz1 libz-dbg libz-dev libzstd1 linux-libc-headers-dev  \
 lrzsz memtester merge-files mesa-dev minicom  \
 mkfontdir mkfontdir-dev mkfontscale mkfontscale-dev  \
-mmc-utils mozjs mozjs-dev \
+mmc-utils mozjs mozjs-dev  \
 ncurses-dev nettle-dbg nettle-dev \
-nspr nspr-dev  \
-nss orc orc-dev \
+orc orc-dev  \
 pciutils perl-dev pkgconfig polkit polkit-dev  \
 psmisc ptpd pulseaudio pulseaudio-dev  \
 python2 python3-compile python3-dbus python3-dbus-dev  \
@@ -164,16 +149,23 @@ python3-dev python3-nose python3-numpy python3-pkgutil  \
 python3-plistlib python3-pycairo python3-pycairo-dev  \
 python3-pyelftools python3-pygobject python3-pygobject-dev  \
 python3-typing python3-unixadmin python3-xml python3-xmlrpc  \
-rgb shadow-dev shared-mime-info-dev shared-mime-info slang sysfsutils sysklogd  \
-sysstat systemd-dev update-rc.d usbutils util-linux-dev util-macros-dev  \
+rgb shadow-dev shared-mime-info-dev slang sysfsutils sysklogd  \
+sysstat update-rc.d usbutils util-linux-dev util-macros-dev  \
 valgrind valgrind-dev wireless-tools  \
 xcb-proto-dev xf86-input-libinput xkeyboard-config xkeyboard-config-dev  \
 xorgproto-dev xrandr-dev xserver-xf86-config xtrans-dev zstd \
+xz \
 "
 
-RCONFLICTS:${PN} += " ${YOCTO-DEPENDS-LIST} "
-RREPLACES:${PN} += " ${YOCTO-DEPENDS-LIST} "
-RPROVIDES:${PN} += " ${YOCTO-DEPENDS-LIST} "
+RCONFLICTS:${PN}-base = " ${YOCTO-DEPENDS-LIST} "
+RCONFLICTS:${PN}-ubuntu-base = " ${YOCTO-DEPENDS-LIST} "
+RCONFLICTS:${PN} = " ${YOCTO-DEPENDS-LIST} "
+RREPLACES:${PN} = " ${YOCTO-DEPENDS-LIST} "
+RREPLACES:${PN}-base = " ${YOCTO-DEPENDS-LIST} "
+RREPLACES:${PN}-ubuntu-base = " ${YOCTO-DEPENDS-LIST} "
+RPROVIDES:${PN} = " ${YOCTO-DEPENDS-LIST} "
+RPROVIDES:${PN}-base = " ${YOCTO-DEPENDS-LIST} "
+RPROVIDES:${PN}-ubuntu-base = " ${YOCTO-DEPENDS-LIST} "
 
 RPROVIDES:${PN}:ubuntu += " libglib-2.0 "
 
@@ -185,3 +177,13 @@ python do_package:append() {
     os.environ['PSEUDO_DISABLED'] = '1'
     d.setVar('ERROR_QA', '')
 }
+
+APTGET_EXTRA_PACKAGES += " \
+    udhcpc \
+    freeglut3-dev \
+    libglu1-mesa \
+    python3 \
+    libegl-dev \
+    libgl-dev \
+    libgles-dev \
+"

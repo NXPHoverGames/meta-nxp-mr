@@ -84,7 +84,7 @@ FILES_SOLIBS_VERSIONED = " \
 FILES:${PN} += "/opt ${libdir}/lib*${SOLIBSDEV}"
 FILES:${PN}-dev += "${FILES_SOLIBS_VERSIONED}"
 
-INSANE_SKIP:${PN} = "rpaths"
+INSANE_SKIP:${PN} = "rpaths file-rdeps"
 
 RDEPENDS:${PN} = "libdrm bash"
 

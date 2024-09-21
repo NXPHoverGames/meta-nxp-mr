@@ -11,8 +11,8 @@ export PACKAGE_INSTALL = "${IMAGE_INSTALL}"
 APTGET_CHROOT_DIR = "${IMAGE_ROOTFS}"
 APTGET_SKIP_UPGRADE = "1"
 
-ROOTFS_POSTPROCESS_COMMAND:append = "do_fix_ldconfig; do_save_graphics; do_aptget_update; do_update_host; do_config_netplan;"
-IMAGE_PREPROCESS_COMMAND:append = " do_config_systemd_resolved; do_enable_graphics; do_disable_gslice; do_cleanup_rootfs; "
+ROOTFS_POSTPROCESS_COMMAND:append = "do_fix_ldconfig; do_aptget_update; do_update_host; do_config_netplan; do_multi_user; "
+IMAGE_PREPROCESS_COMMAND:append = " do_config_systemd_resolved; do_disable_gslice; do_cleanup_rootfs; "
 
 
 # Without the kernel, modules, and firmware we can't really use the Linux
@@ -50,14 +50,14 @@ APTGET_EXTRA_PACKAGES += "\
 	apt vim \
 	ethtool wget ftp iputils-ping \
 	net-tools \
-	nfs-common \
-	openssh-server \
 	libtool autoconf pkg-config \
 	bluez \
 	python-is-python3 \
 	netplan.io \
 	network-manager \
 "
+
+# nfs-common and openssh-server needs fixing with statx
 
 APTGET_EXTRA_SOURCE_PACKAGES += "\
 "
@@ -91,7 +91,6 @@ fakeroot do_update_host() {
 
 do_config_netplan() {
 	set -x
-
 	echo >>"${APTGET_CHROOT_DIR}/etc/netplan/network-manage-all.yaml" "network:"
 	echo >>"${APTGET_CHROOT_DIR}/etc/netplan/network-manage-all.yaml" "  version: 2"
 	echo >>"${APTGET_CHROOT_DIR}/etc/netplan/network-manage-all.yaml" "  renderer: NetworkManager"
@@ -138,6 +137,15 @@ do_enable_graphics() {
 		rm -f ${IMAGE_ROOTFS}/etc/systemd/system/default.target
 		ln /usr/lib/systemd/system/graphical.target -s ${IMAGE_ROOTFS}/etc/systemd/system/default.target
 	fi
+
+	set +x
+}
+
+do_multi_user() {
+	set -x
+
+	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/default.target
+	ln /usr/lib/systemd/system/multi-user.target -s ${IMAGE_ROOTFS}/etc/systemd/system/default.target
 
 	set +x
 }

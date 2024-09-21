@@ -1,0 +1,39 @@
+From a0031bed2fe27daa2e04c9dfb24b40e08041b35c Mon Sep 17 00:00:00 2001
+From: Peter van der Perk <peter.vanderperk@nxp.com>
+Date: Mon, 5 Aug 2024 15:44:03 +0200
+Subject: [PATCH 3/3] arm64: dts: imx8mp-navq: Fix TJA1103 phy
+
+---
+ arch/arm64/boot/dts/freescale/imx8mp-navq.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-navq.dts b/arch/arm64/boot/dts/freescale/imx8mp-navq.dts
+index fef759315654..ce61aa7cd44a 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-navq.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-navq.dts
+@@ -218,7 +218,7 @@ vddio: vddio-regulator {
+ &fec {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_fec>;
+-	phy-mode = "rmii";
++	phy-mode = "rev-rmii";
+ 	phy-handle = <&ethphy1>;
+ 	status = "okay";
+ 	assigned-clock-parents = <&clk IMX8MP_SYS_PLL1_266M>,
+@@ -764,10 +764,10 @@ MX8MP_IOMUXC_SAI1_TXFS__ENET1_RGMII_RX_CTL	0x90
+ 			MX8MP_IOMUXC_SAI1_TXD0__ENET1_RGMII_TD0		0x16
+ 			MX8MP_IOMUXC_SAI1_TXD1__ENET1_RGMII_TD1		0x16
+ 			MX8MP_IOMUXC_SAI1_TXD4__ENET1_RGMII_TX_CTL	0x16
+-			MX8MP_IOMUXC_SAI1_TXD6__ENET1_RX_ER		0x16
++			MX8MP_IOMUXC_SAI1_TXD6__ENET1_RX_ER		0x116
+ 			MX8MP_IOMUXC_SAI1_TXD7__ENET1_TX_ER		0x16
+-			MX8MP_IOMUXC_SAI1_MCLK__ENET1_TX_CLK		0x16
+-			MX8MP_IOMUXC_SAI1_RXFS__ENET1_1588_EVENT0_IN	0x16
++			MX8MP_IOMUXC_SAI1_MCLK__ENET1_TX_CLK		0x40000016
++			MX8MP_IOMUXC_SAI1_RXFS__ENET1_1588_EVENT0_IN	0x116
+ 			MX8MP_IOMUXC_SAI1_RXC__ENET1_1588_EVENT0_OUT	0x16
+ 		>;
+ 	};
+-- 
+2.34.1
+

@@ -1,5 +1,5 @@
 # We currently support recipies for:
-UBUNTU_TARGET_VERSION ?= "23.10"
+UBUNTU_TARGET_VERSION ?= "24.04.1"
 
 UBUNTU_TARGET_MAJORVERSION ?= "${@d.getVar('UBUNTU_TARGET_VERSION', True).rsplit('.')[0]}"
 UBUNTU_TARGET_MINORVERSION ?= "${@d.getVar('UBUNTU_TARGET_VERSION', True).rsplit('.')[1]}"
@@ -20,7 +20,7 @@ INITRAMFS_IMAGE = ""
 #POSTINST_INTERCEPTS_DIR = "<--InVaLiD-->"
 
 GCCVERSION = '${@ \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "23.10", "13.2.0", \
+    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "24.04.1", "13.2.0", \
     "unsupportedubuntuversion" \
     , d)}'
 
@@ -37,7 +37,7 @@ GCCVERSION = '${@ \
 # Desktop 18.04: max glibc 2.27...
 # Desktop 20.x: max glibc 2.31...
 GLIBCVERSION = '${@ \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "23.10", "2.38", \
+    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "24.04.1", "2.39", \
     "unsupportedubuntuversion" \
     , d)}'
 PREFERRED_VERSION_cross-localedef-native = "${GLIBCVERSION}"
@@ -47,7 +47,7 @@ BINUVERSION="2.41"
 # More recent Desktop versions work with symlinks for the base
 # directories. We can't refer to symlink based files
 DISTRO_FEATURES:append = '${@ \
-    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "23.10", " usrmerge", \
+    oe.utils.conditional("UBUNTU_TARGET_BASEVERSION", "24.04.1", " usrmerge", \
    "unsupportedubuntuversion" \
     , d)}'
 

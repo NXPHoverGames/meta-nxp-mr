@@ -1,0 +1,37 @@
+From 450fa82b354a0c730b56583f4a1839b37614d886 Mon Sep 17 00:00:00 2001
+From: Peter van der Perk <peter.vanderperk@nxp.com>
+Date: Mon, 5 Aug 2024 15:43:27 +0200
+Subject: [PATCH 2/3] net: fec: add rev-rmii support
+
+Signed-off-by: Peter van der Perk <peter.vanderperk@nxp.com>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index 94d066cd6238..9297857f03e4 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -1117,7 +1117,8 @@ fec_restart(struct net_device *ndev)
+ 		    fep->phy_interface == PHY_INTERFACE_MODE_RGMII_RXID ||
+ 		    fep->phy_interface == PHY_INTERFACE_MODE_RGMII_TXID)
+ 			rcntl |= (1 << 6);
+-		else if (fep->phy_interface == PHY_INTERFACE_MODE_RMII)
++		else if (fep->phy_interface == PHY_INTERFACE_MODE_RMII ||
++			 fep->phy_interface == PHY_INTERFACE_MODE_REVRMII)
+ 			rcntl |= (1 << 8);
+ 		else
+ 			rcntl &= ~(1 << 8);
+@@ -1145,7 +1146,8 @@ fec_restart(struct net_device *ndev)
+ 			 *   RMII, 50 MHz, no loopback, no echo
+ 			 *   MII, 25 MHz, no loopback, no echo
+ 			 */
+-			cfgr = (fep->phy_interface == PHY_INTERFACE_MODE_RMII)
++			cfgr = (fep->phy_interface == PHY_INTERFACE_MODE_RMII ||
++				fep->phy_interface == PHY_INTERFACE_MODE_REVRMII)
+ 				? BM_MIIGSK_CFGR_RMII : BM_MIIGSK_CFGR_MII;
+ 			if (ndev->phydev && ndev->phydev->speed == SPEED_10)
+ 				cfgr |= BM_MIIGSK_CFGR_FRCONT_10M;
+-- 
+2.34.1
+
