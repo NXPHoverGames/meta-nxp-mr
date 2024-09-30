@@ -1,10 +1,11 @@
 #!/bin/bash
 
 if [[ $(lsb_release -c | grep "noble") ]]; then
+    echo "apparmor_restrict_unprivileged_userns disabled to run bitbake, only lasts this login session."
     echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
 fi
 
-BASE_WORK_DIR="nxp-mr-image"
+BASE_WORK_DIR="~/nxp-mr-image"
 BUILD_TYPE=jazzy
 BRANCH=lf-6.6.23-2.0.0-scarthgap
 MACHINE="imx8mpnavq"
@@ -20,8 +21,8 @@ curl https://storage.googleapis.com/git-repo-downloads/repo  > ~/bin/repo
 chmod a+x ~/bin/repo
 PATH=${PATH}:~/bin
 
-mkdir -p ~/${BASE_WORK_DIR}
-cd ~/${BASE_WORK_DIR}
+mkdir -p ${BASE_WORK_DIR}
+cd ${BASE_WORK_DIR}
 repo init \
     -u https://github.com/nxp-imx/imx-manifest.git \
     -b imx-linux-scarthgap \
@@ -36,7 +37,7 @@ get_yocto_hash() {
     echo "$githash"
 }
 
-cd ~/${BASE_WORK_DIR}/sources
+cd ${BASE_WORK_DIR}/sources
 for i in ${NXP_META_IMAGE}; do
     if [ -d ${i} ]; then
         pushd ${i}
@@ -52,7 +53,7 @@ for i in ${NXP_META_IMAGE}; do
     fi
 done
 
-cd ~/${BASE_WORK_DIR}/build-desktop/conf
+cd ${BASE_WORK_DIR}/build-desktop/conf
 if ! grep -q "/sources/${NXP_META_IMAGE}" bblayers.conf
 then
 cat >> bblayers.conf <<EOF
@@ -92,9 +93,9 @@ fi
 
 RELEASE_VER="${BUILD_TYPE}-$(date +%y%m%d%H%M%S)-${yocto_hash}"
 
-echo $RELEASE_VER > ~/${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-fsl/images/files/release || exit $?
+echo $RELEASE_VER > ${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-fsl/images/files/release || exit $?
 
-for i in ~/${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-kernel/linux/linux-imx_%.bbappend;
+for i in ${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-kernel/linux/linux-imx_%.bbappend;
 do
     sed -i "s/^LOCALVERSION\s*=.*/LOCALVERSION = \"-${RELEASE_VER}\"/" ${i}
     if [ "x$(grep '^LOCALVERSION\s*=' ${i})" = "x" ]; then
@@ -102,7 +103,7 @@ do
     fi
 done
 
-cd ~/${BASE_WORK_DIR}
+cd ${BASE_WORK_DIR}
 source setup-environment build-desktop
 bitbake imx-image-ros -c cleansstate
 bitbake imx-image-ros
