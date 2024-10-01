@@ -10,10 +10,10 @@ require fsl-image-common.inc
 ROOTFS_POSTPROCESS_COMMAND:append = "do_save_cheese;"
 
 ML_NNSTREAMER_PKGS = " \
-    nnstreamer \
-    nnstreamer-tensorflow-lite \
-    nnstreamer-python3 \
-    nnstreamer-protobuf \
+	nnstreamer \
+	nnstreamer-tensorflow-lite \
+	nnstreamer-python3 \
+	nnstreamer-protobuf \
 "
 
 # This must be added first as it provides the foundation for
@@ -27,9 +27,9 @@ IMAGE_INSTALL += "\
 
 IMAGE_INSTALL += "\
 	firmwared \
-    udev-extraconf \
-    packagegroup-fsl-gstreamer1.0 \
-    gstreamer1.0 \
+	udev-extraconf \
+	packagegroup-fsl-gstreamer1.0 \
+	gstreamer1.0 \
 	gstreamer1.0-plugins-good-adaptivedemux2 \
 	gstreamer1.0-plugins-good-alaw \
 	gstreamer1.0-plugins-good-alpha \
@@ -77,8 +77,8 @@ IMAGE_INSTALL += "\
 	gstreamer1.0-plugins-good-wavparse \
 	gstreamer1.0-plugins-good-xingmux \
 	gstreamer1.0-plugins-good-y4menc \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
+	gstreamer1.0-plugins-good \
+	gstreamer1.0-plugins-bad \
 	gstreamer1.0-plugins-bad-accurip \
 	gstreamer1.0-plugins-bad-adpcmdec \
 	gstreamer1.0-plugins-bad-adpcmenc \
@@ -166,7 +166,7 @@ IMAGE_INSTALL += "\
 	gstreamer1.0-plugins-bad-videosignal \
 	gstreamer1.0-plugins-bad-vmnc \
 	gstreamer1.0-plugins-bad-y4mdec \
-    gstreamer1.0-plugins-base \
+	gstreamer1.0-plugins-base \
 	gstreamer1.0-plugins-base-adder \
 	gstreamer1.0-plugins-base-app \
 	gstreamer1.0-plugins-base-apps \
@@ -188,6 +188,8 @@ IMAGE_INSTALL += "\
 	gstreamer1.0-plugins-base-videotestsrc \
 	gstreamer1.0-plugins-base-ximagesink \
 	gstreamer1.0-plugins-base-xvimagesink \
+	tensorflow-lite \
+	tensorflow-lite-vx-delegate \
 "
 
 # gstreamer1.0-plugins-good-ximagesrc libxtst6
@@ -208,18 +210,18 @@ APTGET_EXTRA_PACKAGES += "\
 ##############################################################################
 
 # GPU driver
-G2D_SAMPLES                 = ""
-G2D_SAMPLES:imxgpu2d        = "imx-g2d-samples"
-G2D_SAMPLES:imxdpu          = "imx-g2d-samples"
+G2D_SAMPLES				 = ""
+G2D_SAMPLES:imxgpu2d		= "imx-g2d-samples"
+G2D_SAMPLES:imxdpu		  = "imx-g2d-samples"
 
 IMAGE_INSTALL:remove:imx95-19x19-lpddr5-evk = " \
-    libgles3-imx-dev \
-    libopencl-imx \
-    libvulkan-imx \
+	libgles3-imx-dev \
+	libopencl-imx \
+	libvulkan-imx \
 	libopencl-imx \
 	libgal-imx \
-    packagegroup-fsl-gstreamer1.0 \
-    gstreamer1.0 \
+	packagegroup-fsl-gstreamer1.0 \
+	gstreamer1.0 \
 	gstreamer1.0-plugins-good-adaptivedemux2 \
 	gstreamer1.0-plugins-good-alaw \
 	gstreamer1.0-plugins-good-alpha \
@@ -267,8 +269,8 @@ IMAGE_INSTALL:remove:imx95-19x19-lpddr5-evk = " \
 	gstreamer1.0-plugins-good-wavparse \
 	gstreamer1.0-plugins-good-xingmux \
 	gstreamer1.0-plugins-good-y4menc \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
+	gstreamer1.0-plugins-good \
+	gstreamer1.0-plugins-bad \
 	gstreamer1.0-plugins-bad-accurip \
 	gstreamer1.0-plugins-bad-adpcmdec \
 	gstreamer1.0-plugins-bad-adpcmenc \
@@ -356,7 +358,7 @@ IMAGE_INSTALL:remove:imx95-19x19-lpddr5-evk = " \
 	gstreamer1.0-plugins-bad-videosignal \
 	gstreamer1.0-plugins-bad-vmnc \
 	gstreamer1.0-plugins-bad-y4mdec \
-    gstreamer1.0-plugins-base \
+	gstreamer1.0-plugins-base \
 	gstreamer1.0-plugins-base-adder \
 	gstreamer1.0-plugins-base-app \
 	gstreamer1.0-plugins-base-apps \
@@ -378,11 +380,11 @@ IMAGE_INSTALL:remove:imx95-19x19-lpddr5-evk = " \
 	gstreamer1.0-plugins-base-videotestsrc \
 	gstreamer1.0-plugins-base-ximagesink \
 	gstreamer1.0-plugins-base-xvimagesink \
-    libopenvx-imx libopenvx-imx-dev \
-    libnn-imx \
-    tensorflow-lite \
-    tensorflow-lite-vx-delegate \
-    ${ML_NNSTREAMER_PKGS} \
+	libopenvx-imx libopenvx-imx-dev \
+	libnn-imx \
+	tensorflow-lite \
+	tensorflow-lite-vx-delegate \
+	${ML_NNSTREAMER_PKGS} \
 "
 
 fakeroot do_save_cheese() {

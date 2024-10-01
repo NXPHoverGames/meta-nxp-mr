@@ -1,5 +1,5 @@
 # A more complex image with ROS elements
-require imx-image-desktop.bb
+require imx-image-mr.bb
 
 CUSTOM_FILES_PATH := "${THISDIR}/files"
 SRC_URI = " \
@@ -215,4 +215,6 @@ fakeroot do_install_home_files() {
     install -m 0755 ${CUSTOM_FILES_PATH}/install_cognipilot.sh ${APTGET_CHROOT_DIR}/home/user
     install -m 0644 ${CUSTOM_FILES_PATH}/release ${IMAGE_ROOTFS}${sysconfdir}/
     chmod 755 ${APTGET_CHROOT_DIR}/home/user/install_cognipilot.sh
+    install -m 0755 ${CUSTOM_FILES_PATH}/tflite_runtime-2.19.0-cp312-cp312-linux_aarch64.whl ${APTGET_CHROOT_DIR}/tmp
+    chroot ${APTGET_CHROOT_DIR} /usr/bin/pip3 install ${APTGET_CHROOT_DIR}/tmp/tflite_runtime-2.19.0-cp312-cp312-linux_aarch64.whl
 }
