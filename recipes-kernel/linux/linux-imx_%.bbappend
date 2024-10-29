@@ -8,6 +8,7 @@ SRC_URI += " \
          file://0005-imx8mpnavq-enable-sr1xx-spi-driver-in-dts.patch \
          file://0006-ov5645tn-driver-for-navq.patch \
          file://uwb.cfg \
+         file://cpufreq.cfg \
 "
 
 do_configure:append () {
