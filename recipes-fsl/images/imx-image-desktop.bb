@@ -188,6 +188,8 @@ IMAGE_INSTALL += "\
 	gstreamer1.0-plugins-base-videotestsrc \
 	gstreamer1.0-plugins-base-ximagesink \
 	gstreamer1.0-plugins-base-xvimagesink \
+	tensorflow-lite \
+	tensorflow-lite-vx-delegate \
 "
 
 # gstreamer1.0-plugins-good-ximagesrc libxtst6
