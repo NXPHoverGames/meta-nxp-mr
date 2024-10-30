@@ -5,7 +5,7 @@ if [[ $(lsb_release -c | grep "noble") ]]; then
     echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
 fi
 
-BASE_WORK_DIR="~/nxp-mr-image"
+BASE_WORK_DIR="$HOME/nxp-mr-image"
 BUILD_TYPE=jazzy
 BRANCH=lf-6.6.23-2.0.0-scarthgap
 MACHINE="imx8mpnavq"
