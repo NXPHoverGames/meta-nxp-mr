@@ -95,14 +95,6 @@ RELEASE_VER="${BUILD_TYPE}-$(date +%y%m%d%H%M%S)-${yocto_hash}"
 
 echo $RELEASE_VER > ${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-fsl/images/files/release || exit $?
 
-for i in ${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-kernel/linux/linux-imx_%.bbappend;
-do
-    sed -i "s/^LOCALVERSION\s*=.*/LOCALVERSION = \"-${RELEASE_VER}\"/" ${i}
-    if [ "x$(grep '^LOCALVERSION\s*=' ${i})" = "x" ]; then
-        echo "LOCALVERSION = \"-$RELEASE_VER\"" >> ${i} || exit $?
-    fi
-done
-
 cd ${BASE_WORK_DIR}
 source setup-environment build-desktop
 bitbake imx-image-ros -c cleansstate
