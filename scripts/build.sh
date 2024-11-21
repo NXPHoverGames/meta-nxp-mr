@@ -72,12 +72,6 @@ if ! grep -q 'PACKAGE_CLASSES = "package_rpm"' local.conf
 then
 sed -i 's/^PACKAGE_CLASSES =.*/PACKAGE_CLASSES = "package_rpm"/' local.conf
 fi
-if ! grep -q 'DISTRO_FEATURES:remove = " wayland alsa"' local.conf
-then
-cat >> local.conf <<EOF
-DISTRO_FEATURES:remove = " wayland alsa"
-EOF
-fi
 if ! grep -q 'PARALLEL_MAKE =' local.conf
 then
 cat >> local.conf <<EOF
