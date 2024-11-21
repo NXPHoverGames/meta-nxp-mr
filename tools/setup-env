@@ -1,7 +1,7 @@
 source setup-env $@
 
 if [ -f conf/local.conf ]; then
-    if [ `grep -c "meta-nxp-desktop" conf/bblayers.conf` -eq '0' ]; then
+    if [ `grep -c "meta-nxp-mr" conf/bblayers.conf` -eq '0' ]; then
         sed -e "s/'fsl-qoriq'/'fsl-qoriq-distro'/g" -i conf/local.conf
         sed -E "s/(MACHINE \?\?= ')(.*)'/\1\2distro'/g" -i conf/local.conf
         echo ""                                                                       >> conf/local.conf
@@ -21,7 +21,7 @@ if [ -f conf/local.conf ]; then
         echo "#    'shell' is the default shell (if empty, default is /bin/sh)."      >> conf/local.conf
 
         echo "BSPDIR := \"\${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}\""  >> conf/bblayers.conf
-        echo "BBLAYERS += \"\${BSPDIR}/sources/meta-nxp-desktop\""                    >> conf/bblayers.conf
+        echo "BBLAYERS += \"\${BSPDIR}/sources/meta-nxp-mr\""                         >> conf/bblayers.conf
     fi
 
     echo ""
