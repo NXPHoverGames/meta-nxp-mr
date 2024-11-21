@@ -188,6 +188,10 @@ IMAGE_INSTALL += "\
 	gstreamer1.0-plugins-base-videotestsrc \
 	gstreamer1.0-plugins-base-ximagesink \
 	gstreamer1.0-plugins-base-xvimagesink \
+	libopenvx-imx libopenvx-imx-dev \
+	libnn-imx \
+	tensorflow-lite \
+	tensorflow-lite-vx-delegate \ 
 "
 
 # gstreamer1.0-plugins-good-ximagesrc libxtst6
@@ -197,6 +201,7 @@ IMAGE_INSTALL += "\
 
 APTGET_EXTRA_PACKAGES += "\
 	ntpdate patchelf \
+	python3-numpy python3-pil \
 "
 
 ##############################################################################
@@ -382,7 +387,7 @@ IMAGE_INSTALL:remove:imx95-19x19-lpddr5-evk = " \
     libnn-imx \
     tensorflow-lite \
     tensorflow-lite-vx-delegate \
-    ${ML_NNSTREAMER_PKGS} \
+	${ML_NNSTREAMER_PKGS} \
 "
 
 fakeroot do_save_cheese() {
@@ -395,3 +400,5 @@ fakeroot do_save_cheese() {
 
 	set +x
 }
+
+PACKAGE_EXCLUDE = "libgles3-imx-dev libegl-imx-dev libc6-dev"

@@ -82,7 +82,7 @@ glib-2.0 glib-networking gobject-introspection  \
 gobject-introspection-dev gsettings-desktop-schemas-dev gtk+3-dev gtk+-dev \
 hicolor-icon-theme i2c-tools ibxshmfence-dev icu icu-dev  \
 ifenslave init-system-helpers-service iproute2-ip iso-codes-dev  \
-lame lame-dev libasm1 libasound2 libatk-1.0-0 libatk-bridge-2.0-0  \
+lame lame-dev libasm1 libatk-1.0-0 libatk-bridge-2.0-0  \
 libatomic-dev libatomic-ops libatomic-ops-dev libatopology2  \
 libatspi0 libattr1 libavahi-client3 libavahi-common3  \
 libavahi-core7 libavahi-glib1 libavahi-gobject0  \
