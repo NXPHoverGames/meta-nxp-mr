@@ -23,6 +23,13 @@ IMAGE_INSTALL += "\
 	ubuntu-base-doc \
 "
 
+# Include kernel source
+IMAGE_INSTALL += "\
+	kernel-dev \
+	kernel-devsrc \
+	kernel-modules \
+"
+
 IMAGE_INSTALL += "\
 	firmwared \
 	udev-extraconf \

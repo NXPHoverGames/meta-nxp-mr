@@ -9,6 +9,7 @@ SRC_URI += " \
          file://0006-ov5645tn-driver-for-navq.patch \
          file://uwb.cfg \
          file://cpufreq.cfg \
+         file://usbserial.cfg \
 "
 
 do_configure:append () {
