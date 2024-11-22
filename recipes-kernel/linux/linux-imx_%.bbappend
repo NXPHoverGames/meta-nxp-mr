@@ -15,7 +15,7 @@ do_configure:append () {
     ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config $(ls ${WORKDIR}/*.cfg)
 
     if [ ! -z "${LOCALVERSION}" ]; then
-        echo "CONFIG_LOCALVERSION="\"${LOCALVERSION}\" >> ${B}/.config
+        echo "CONFIG_LOCALVERSION=\"\"" >> ${B}/.config
     fi
 }
 

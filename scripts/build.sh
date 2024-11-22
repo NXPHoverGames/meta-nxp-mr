@@ -53,6 +53,8 @@ for i in ${NXP_META_IMAGE}; do
     fi
 done
 
+RELEASE_VER="${BUILD_TYPE}-$(date +%y%m%d%H%M%S)-${yocto_hash}"
+
 cd ${BASE_WORK_DIR}/build-desktop/conf
 if ! grep -q "/sources/${NXP_META_IMAGE}" bblayers.conf
 then
@@ -84,10 +86,23 @@ cat >> local.conf <<EOF
 BB_NUMBER_THREADS = "$(echo "$(nproc) / 2" | bc)"
 EOF
 fi
-
-RELEASE_VER="${BUILD_TYPE}-$(date +%y%m%d%H%M%S)-${yocto_hash}"
+if ! grep -q 'KERNEL_LOCALVERSION =' local.conf
+then
+cat >> local.conf <<EOF
+KERNEL_LOCALVERSION = "$RELEASE_VER"
+EOF
+fi
 
 echo $RELEASE_VER > ${BASE_WORK_DIR}/sources/${NXP_META_IMAGE}/recipes-fsl/images/files/release || exit $?
+
+for i in ${BUILDDIR}/../sources/meta-imx/meta-imx-bsp/recipes-kernel/linux/linux-imx_6.6.bb \
+     ${BUILDDIR}/../sources/meta-imx/meta-imx-bsp/recipes-kernel/kernel-modules/kernel-module-imx-gpu-viv_6.4.11.p2.6.bb;
+do
+    sed -i "s/^LOCALVERSION\s*=.*/LOCALVERSION = \"-${RELEASE_VER}\"/" ${i}
+    if [ "x$(grep '^LOCALVERSION\s*=' ${i})" = "x" ]; then
+        echo "LOCALVERSION = \"-$RELEASE_VER\"" >> ${i} || exit $?
+    fi
+done
 
 cd ${BASE_WORK_DIR}
 source setup-environment build-desktop
