@@ -132,6 +132,7 @@ libticw5 libtool libtool-dev libturbojpeg0 libudev1  \
 libunistring2 libunistring-dbg libunistring-dev  \
 libunwind libusb-1.0-0 libusb-1.0-dbg libusb-1.0-dev  \
 libuuid1 \
+util-linux bison m4 bc \
 libwebp libx11-6 libx11-dbg libx11-dev libx11-xcb1  \
 libxau6 libxau-dbg libxau-dev  \
 libxcb1 libxcb-composite0 libxcb-damage0 libxcb-dbg  \
