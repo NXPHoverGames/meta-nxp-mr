@@ -1,4 +1,11 @@
 
+# Boot target is multi-user.target; do not auto-start the Wayland compositor.
+# The base weston-init recipe enables weston.service and weston.socket via the
+# default SYSTEMD_AUTO_ENABLE="enable", which causes a boot-time
+# "Failed to listen on weston.socket" failure. Ship both units but leave them
+# disabled; weston can still be started manually (systemctl start weston).
+SYSTEMD_AUTO_ENABLE:${PN} = "disable"
+
 # In Ubuntu overlay images, the RPM preinst groupadd/useradd create/delete
 # /etc/.pwd.lock whose inode gets reused by the next RPM-installed file,
 # triggering a pseudo inode-reuse path-mismatch abort during do_rootfs.
