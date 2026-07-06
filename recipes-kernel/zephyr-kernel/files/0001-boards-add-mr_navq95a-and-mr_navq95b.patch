@@ -320,7 +320,7 @@ new file mode 100644
 index 00000000000..1874067dcf9
 --- /dev/null
 +++ b/boards/nxp/mr_navq95a/mr_navq95a_mimx9596_m7.dts
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,181 @@
 +/*
 + * Copyright 2024 NXP
 + *
@@ -380,21 +380,22 @@ index 00000000000..1874067dcf9
 +			/*
 +			 * Partition sizes must be aligned
 +			 * to the flash memory sector size of 4KB.
-+			 * 
-+			 * boot_partition is left out since that will
-+			 * run from ITCM
 +			 */
-+			slot0_partition: partition@0 {
++			boot_partition: partition@0 {
++				label = "mcuboot";
++				reg = <0x00000000 DT_SIZE_K(128)>;
++			};
++			slot0_partition: partition@20000 {
 +				label = "image-0";
-+				reg = <0x00000000 DT_SIZE_M(7)>;
++				reg = <0x00020000 DT_SIZE_M(7)>;
 +			};
-+			slot1_partition: partition@700000 {
++			slot1_partition: partition@720000 {
 +				label = "image-1";
-+				reg = <0x00700000 DT_SIZE_M(7)>;
++				reg = <0x00720000 DT_SIZE_M(7)>;
 +			};
-+			storage_partition: partition@E00000 {
++			storage_partition: partition@E20000 {
 +				label = "storage";
-+				reg = <0x00E00000 DT_SIZE_M(2)>;
++				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 +			};
 +		};
 +	};
@@ -975,7 +976,7 @@ new file mode 100644
 index 00000000000..ae24ad1e2d4
 --- /dev/null
 +++ b/boards/nxp/mr_navq95b/mr_navq95b_mimx9596_m7.dts
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,181 @@
 +/*
 + * Copyright 2024 NXP
 + *
@@ -1035,21 +1036,22 @@ index 00000000000..ae24ad1e2d4
 +			/*
 +			 * Partition sizes must be aligned
 +			 * to the flash memory sector size of 4KB.
-+			 * 
-+			 * boot_partition is left out since that will
-+			 * run from ITCM
 +			 */
-+			slot0_partition: partition@0 {
++			boot_partition: partition@0 {
++				label = "mcuboot";
++				reg = <0x00000000 DT_SIZE_K(128)>;
++			};
++			slot0_partition: partition@20000 {
 +				label = "image-0";
-+				reg = <0x00000000 DT_SIZE_M(7)>;
++				reg = <0x00020000 DT_SIZE_M(7)>;
 +			};
-+			slot1_partition: partition@700000 {
++			slot1_partition: partition@720000 {
 +				label = "image-1";
-+				reg = <0x00700000 DT_SIZE_M(7)>;
++				reg = <0x00720000 DT_SIZE_M(7)>;
 +			};
-+			storage_partition: partition@E00000 {
++			storage_partition: partition@E20000 {
 +				label = "storage";
-+				reg = <0x00E00000 DT_SIZE_M(2)>;
++				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 +			};
 +		};
 +	};
