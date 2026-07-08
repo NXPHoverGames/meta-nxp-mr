@@ -51,6 +51,8 @@ IMAGE_INSTALL:append:imx95-navq = " \
 	rpmsgfs-server \
 	autoivnsw-sja1110-linux \
 	firmware-sja1110 \
+	la93xx-host-sw \
+	la9310-firmware \
 	linux-firmware-mali-csffw-arch1012 \
 	panvk-layer \
 	"

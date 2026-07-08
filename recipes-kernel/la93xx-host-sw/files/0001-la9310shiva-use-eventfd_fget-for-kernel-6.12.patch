@@ -1,0 +1,85 @@
+From: Peter <peter@navq>
+Date: Tue, 8 Jul 2026 00:00:00 +0000
+Subject: [PATCH] la9310shiva: use eventfd_fget() on kernel >= 6.12
+
+Upstream-Status: Inappropriate [out-of-tree kernel version compatibility]
+
+lookup_fdget_rcu() is no longer available to out-of-tree modules on
+recent kernels (it is gone from the exported headers on 6.18), which
+breaks the la9310shiva build with:
+
+  error: implicit declaration of function 'lookup_fdget_rcu'
+
+Replace the manual RCU fd lookup in the IPC and TTI eventfd registration
+paths with eventfd_fget(), which performs the fd lookup and takes a
+reference to the eventfd file in a single exported call. This keeps
+efd_file valid for the subsequent eventfd_ctx_fileget() and matches the
+reference-counting semantics of the previous lookup_fdget_rcu() path.
+
+Signed-off-by: Peter <peter@navq>
+diff --git a/kernel_driver/la9310shiva/la9310_ipc.c b/kernel_driver/la9310shiva/la9310_ipc.c
+index 85c03bd..346b74d 100644
+--- a/kernel_driver/la9310shiva/la9310_ipc.c
++++ b/kernel_driver/la9310shiva/la9310_ipc.c
+@@ -161,15 +161,24 @@ static int register_ipc_channel_irq(struct la9310_dev *la9310_dev, int ipc_ch_nu
+ 	/* Get current task context from which IOCTL was called */
+ 	userspace_task = current;
+ 
+-	rcu_read_lock();
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+-        efd_file = lookup_fdget_rcu(fd);
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
++	/*
++	 * lookup_fdget_rcu() is no longer available to modules on recent
++	 * kernels; eventfd_fget() performs the fd lookup and takes a
++	 * reference in one exported call.
++	 */
++	efd_file = eventfd_fget(fd);
++	if (IS_ERR(efd_file))
++		efd_file = NULL;
++#else
++	rcu_read_lock();
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+ 	efd_file = files_lookup_fd_rcu(userspace_task->files, fd);
+ #else
+ 	efd_file = fcheck_files(userspace_task->files, fd);
+ #endif
+ 	rcu_read_unlock();
++#endif
+ 
+ 	ipc_chan->evt_fd_ctxt = eventfd_ctx_fileget(efd_file);
+ 	if (ipc_chan->evt_fd_ctxt != NULL) {
+diff --git a/kernel_driver/la9310shiva/la9310_tti.c b/kernel_driver/la9310shiva/la9310_tti.c
+index 6267246..b4eb7f0 100644
+--- a/kernel_driver/la9310shiva/la9310_tti.c
++++ b/kernel_driver/la9310shiva/la9310_tti.c
+@@ -184,10 +184,18 @@ int tti_register_irq(struct tti_priv *tti_priv_t, struct tti *tti_t)
+ 
+ 	if (tti_t->tti_eventfd > 0) {
+ 		userspace_task = current;
+-		rcu_read_lock();
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+-		efd_file = lookup_fdget_rcu(tti_t->tti_eventfd);
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
++		/*
++		 * lookup_fdget_rcu() is no longer available to modules on
++		 * recent kernels; eventfd_fget() performs the fd lookup and
++		 * takes a reference in one exported call.
++		 */
++		efd_file = eventfd_fget(tti_t->tti_eventfd);
++		if (IS_ERR(efd_file))
++			efd_file = NULL;
++#else
++		rcu_read_lock();
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+ 		efd_file = files_lookup_fd_rcu(userspace_task->files,
+ 				tti_t->tti_eventfd);
+ #else
+@@ -195,6 +203,7 @@ int tti_register_irq(struct tti_priv *tti_priv_t, struct tti *tti_t)
+ 				tti_t->tti_eventfd);
+ #endif
+ 		rcu_read_unlock();
++#endif
+ 		tti_priv_t->evt_fd_ctxt = eventfd_ctx_fileget(efd_file);
+ 	}
+ err:
