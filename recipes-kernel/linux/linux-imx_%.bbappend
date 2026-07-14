@@ -28,7 +28,7 @@ SRC_URI:append:imx8mpnavq = " \
          file://uwb.cfg \
 "
 
-SRCBRANCH = "imx95-navq-lf-6.18.y-Q2"
+SRCBRANCH = "imx95-navq-lf-6.18.y"
 SRCREV = "${AUTOREV}"
 LINUX_IMX_SRC = "git://git@github.com/NXP-Robotics/linux-imx.git;protocol=https;branch=${SRCBRANCH}"
 SRC_URI = "${LINUX_IMX_SRC}"
