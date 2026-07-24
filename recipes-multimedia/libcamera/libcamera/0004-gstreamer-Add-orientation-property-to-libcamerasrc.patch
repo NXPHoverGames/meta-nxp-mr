@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: NXP-MR <meta-nxp-mr@nxp.com>
+Date: Thu, 23 Jul 2026 17:30:00 +0200
+Subject: [PATCH] gstreamer: Add orientation property to libcamerasrc
+
+The libcamerasrc element does not expose any way to request an image
+orientation from a GStreamer pipeline. Orientation is a configure-time
+property of a CameraConfiguration (not a runtime control), so it cannot
+be selected through the generic control properties either.
+
+On the NAVQ95 the Raspberry Pi camera modules are mounted upside-down and
+the device tree declares rotation = <180>. With the NXP neo pipeline the
+default readout is delivered "as mounted", so a plain
+
+    gst-launch-1.0 libcamerasrc ! ...
+
+produces an upside-down image and there is no property to correct it
+(unlike the "cam" tool which accepts --orientation).
+
+Add an "orientation" enum property mapping to libcamera::Orientation.
+When set to something other than the default "auto" sentinel, the
+requested orientation is applied to the CameraConfiguration right after
+generateConfiguration(), so the pipeline handler performs a real
+sensor-level flip/rotation, e.g.:
+
+    gst-launch-1.0 libcamerasrc orientation=rot-180 ! ...
+
+The default value "auto" leaves the orientation chosen by the pipeline
+handler untouched, preserving existing behaviour.
+
+Upstream-Status: Pending
+
+Signed-off-by: NXP-MR <meta-nxp-mr@nxp.com>
+---
+--- a/src/gstreamer/gstlibcamerasrc.cpp
++++ b/src/gstreamer/gstlibcamerasrc.cpp
+@@ -30,6 +30,7 @@
+ #include <libcamera/camera.h>
+ #include <libcamera/camera_manager.h>
+ #include <libcamera/control_ids.h>
++#include <libcamera/orientation.h>
+ 
+ #include <gst/base/base.h>
+ 
+@@ -142,6 +143,7 @@
+ 
+ 	gchar *camera_name;
+ 	GstStructure *sensor_config;
++	gint orientation;
+ 
+ 	std::atomic<GstEvent *> pending_eos;
+ 
+@@ -154,9 +156,38 @@
+ 	PROP_0,
+ 	PROP_CAMERA_NAME,
+ 	PROP_SENSOR_CONFIG,
++	PROP_ORIENTATION,
+ 	PROP_LAST
+ };
+ 
++/*
++ * Maps to libcamera::Orientation. The special value 0 ("auto") is not a valid
++ * libcamera Orientation (the EXIF-derived enum starts at 1) and is used as a
++ * sentinel to leave the orientation chosen by the pipeline handler untouched.
++ */
++#define GST_TYPE_LIBCAMERA_ORIENTATION (gst_libcamera_orientation_get_type())
++static GType gst_libcamera_orientation_get_type()
++{
++	static GType type = 0;
++	static const GEnumValue values[] = {
++		{ 0, "Keep the pipeline default orientation", "auto" },
++		{ static_cast<gint>(Orientation::Rotate0), "No rotation", "rot-0" },
++		{ static_cast<gint>(Orientation::Rotate0Mirror), "Horizontal mirror", "rot-0-mirror" },
++		{ static_cast<gint>(Orientation::Rotate180), "Rotate 180 degrees", "rot-180" },
++		{ static_cast<gint>(Orientation::Rotate180Mirror), "Vertical mirror", "rot-180-mirror" },
++		{ static_cast<gint>(Orientation::Rotate90Mirror), "Rotate 90 degrees and mirror", "rot-90-mirror" },
++		{ static_cast<gint>(Orientation::Rotate270), "Rotate 270 degrees", "rot-270" },
++		{ static_cast<gint>(Orientation::Rotate270Mirror), "Rotate 270 degrees and mirror", "rot-270-mirror" },
++		{ static_cast<gint>(Orientation::Rotate90), "Rotate 90 degrees", "rot-90" },
++		{ 0, nullptr, nullptr },
++	};
++
++	if (!type)
++		type = g_enum_register_static("GstLibcameraOrientation", values);
++
++	return type;
++}
++
+ static void gst_libcamera_src_child_proxy_init(gpointer g_iface,
+ 					       gpointer iface_data);
+ 
+@@ -848,6 +879,9 @@
+ 	}
+ 	g_assert(state->config_->size() == state->srcpads_.size());
+ 
++	if (self->orientation != 0)
++		state->config_->orientation = static_cast<Orientation>(self->orientation);
++
+ 	/* Apply optional sensor configuration. */
+ 	if (self->sensor_config) {
+ 		gint w = 0, h = 0, depth = 0;
+@@ -989,6 +1023,9 @@
+ 		g_clear_pointer(&self->sensor_config, gst_structure_free);
+ 		self->sensor_config = (GstStructure *)g_value_dup_boxed(value);
+ 		break;
++	case PROP_ORIENTATION:
++		self->orientation = g_value_get_enum(value);
++		break;
+ 	default:
+ 		if (!state->controls_.setProperty(prop_id - PROP_LAST, value, pspec))
+ 			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+@@ -1011,6 +1048,9 @@
+ 	case PROP_SENSOR_CONFIG:
+ 		g_value_set_boxed(value, self->sensor_config);
+ 		break;
++	case PROP_ORIENTATION:
++		g_value_set_enum(value, self->orientation);
++		break;
+ 	default:
+ 		if (!state->controls_.getProperty(prop_id - PROP_LAST, value, pspec))
+ 			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+@@ -1235,6 +1275,18 @@
+ 						| G_PARAM_STATIC_STRINGS));
+ 	g_object_class_install_property(object_class, PROP_SENSOR_CONFIG, spec);
+ 
++	spec = g_param_spec_enum("orientation", "Orientation",
++				 "Select the desired image orientation. When set to a value "
++				 "other than \"auto\", the pipeline flips/rotates the sensor "
++				 "readout accordingly (e.g. \"rot-180\" for an upside-down "
++				 "mounted module).",
++				 GST_TYPE_LIBCAMERA_ORIENTATION, 0,
++				 (GParamFlags)(GST_PARAM_MUTABLE_READY
++					       | G_PARAM_CONSTRUCT
++					       | G_PARAM_READWRITE
++					       | G_PARAM_STATIC_STRINGS));
++	g_object_class_install_property(object_class, PROP_ORIENTATION, spec);
++
+ 	GstCameraControls::installProperties(object_class, PROP_LAST);
+ }
+ 
+-- 
+2.34.1
+

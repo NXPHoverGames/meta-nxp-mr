@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: NXP-MR <meta-nxp-mr@nxp.com>
+Date: Thu, 23 Jul 2026 15:54:05 +0200
+Subject: [PATCH] libipa: camera_sensor_helper: Extend imx708 to imx708_wide
+
+The imx708 camera sensor helper was added in
+6a393789f342fb43e37d986394eb1848f9ca5093, but the Raspberry Pi specific
+"wide" / "noir" suffixes were intentionally omitted, and the camera
+sensor properties database has no entry for them either.
+
+The NXP MR NAVQ95 board ships the Raspberry Pi Camera Module 3 Wide,
+whose sensor reports the model string "imx708_wide". Without a matching
+helper, libcamera fails to resolve the sensor and falls back with a
+warning, degrading AE/AGC behaviour.
+
+Register an "imx708_wide" helper that subclasses CameraSensorHelperImx708
+so it inherits the exact black level and analogue gain formula from the
+base imx708 helper.
+
+Upstream-Status: Inappropriate [RPi-specific sensor model suffix, omitted
+upstream by design in 6a393789f342fb43e37d986394eb1848f9ca5093]
+
+Signed-off-by: NXP-MR <meta-nxp-mr@nxp.com>
+---
+ src/ipa/libipa/camera_sensor_helper.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/ipa/libipa/camera_sensor_helper.cpp b/src/ipa/libipa/camera_sensor_helper.cpp
+index e3e3e5355..f00000000 100644
+--- a/src/ipa/libipa/camera_sensor_helper.cpp
++++ b/src/ipa/libipa/camera_sensor_helper.cpp
+@@ -653,6 +653,11 @@ public:
+ };
+ REGISTER_CAMERA_SENSOR_HELPER("imx708", CameraSensorHelperImx708)
+ 
++class CameraSensorHelperImx708Wide : public CameraSensorHelperImx708
++{
++};
++REGISTER_CAMERA_SENSOR_HELPER("imx708_wide", CameraSensorHelperImx708Wide)
++
+ class CameraSensorHelperOv2685 : public CameraSensorHelper
+ {
+ public:
+-- 
+2.34.1

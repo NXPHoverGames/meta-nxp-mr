@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: CC0-1.0
+# Tuning for the Raspberry Pi Camera Module 3 Wide (imx708_wide).
+# Same sensor as imx708 but a different (wide-angle) lens assembly, so the
+# CCM matrixes and the AF calibration differ from the standard module.
+# CCM matrixes and AF data come from the RPi imx708_wide.json calibration file.
+# As in the nxp imx708.yaml, PDAF is disabled for the neo pipeline (CDAF only):
+# pdaf_gain and dropout_frames are forced to 0.
+%YAML 1.1
+---
+version: 1
+algorithms:
+  - PipeConf:
+  - Awb:
+  - BlackLevelCorrection:
+      # offset 64 for 10-bit bitdepth
+      R: 4096
+      Gr: 4096
+      Gb: 4096
+      B: 4096
+  - Ccm:
+      ccms: [
+          {
+              ct: 2868,
+              ccm:
+              [
+                  1.58923, -0.36649, -0.22273,
+                  -0.43591, 1.84858, -0.41268,
+                  0.02948, -0.77666, 1.74718
+              ]
+          },
+          {
+              ct: 2965,
+              ccm:
+              [
+                  1.73397, -0.42794, -0.30603,
+                  -0.36504, 1.72431, -0.35926,
+                  0.12765, -1.10933, 1.98168
+              ]
+          },
+          {
+              ct: 3603,
+              ccm:
+              [
+                  1.61787, -0.42704, -0.19084,
+                  -0.37819, 1.74588, -0.36769,
+                  0.00961, -0.59807, 1.58847
+              ]
+          },
+          {
+              ct: 4620,
+              ccm:
+              [
+                  1.55581, -0.35422, -0.20158,
+                  -0.31805, 1.79309, -0.47505,
+                  -0.01256, -0.54489, 1.55746
+              ]
+          },
+          {
+              ct: 5901,
+              ccm:
+              [
+                  1.64439, -0.48855, -0.15585,
+                  -0.29149, 1.67122, -0.37972,
+                  -0.03111, -0.44052, 1.47163
+              ]
+          },
+          {
+              ct: 7610,
+              ccm:
+              [
+                  1.48667, -0.26072, -0.22595,
+                  -0.21815, 1.86724, -0.64909,
+                  -0.00985, -0.64485, 1.65471
+              ]
+          }
+      ]
+  - Agc:
+  - Af:
+      ranges:
+        normal:
+          min: 0.0
+          max: 12.0
+          default: 1.0
+        macro:
+          min: 4.0
+          max: 32.0
+          default: 6.0
+      speeds:
+        # CDAF only - PDAF not supported
+        normal:
+          step_coarse: 2.0
+          step_fine: 0.5
+          contrast_ratio: 0.75
+          retrigger_ratio: 0.8
+          retrigger_delay: 10
+          pdaf_gain: 0
+          pdaf_squelch: 0.2
+          max_slew: 3.0
+          pdaf_frames: 20
+          dropout_frames: 0
+          step_frames: 5
+        fast:
+          step_coarse: 2.5
+          step_fine: 0.0
+          contrast_ratio: 0.75
+          retrigger_ratio: 0.8
+          retrigger_delay: 8
+          pdaf_gain: 0
+          pdaf_squelch: 0.2
+          max_slew: 4.0
+          pdaf_frames: 16
+          dropout_frames: 0
+          step_frames: 4
+      conf_epsilon: 8
+      conf_thresh: 12
+      conf_clip: 512
+      skip_frames: 5
+      check_for_ir: false
+      map:
+        - 0.0
+        - 420
+        - 35.0
+        - 920
+...

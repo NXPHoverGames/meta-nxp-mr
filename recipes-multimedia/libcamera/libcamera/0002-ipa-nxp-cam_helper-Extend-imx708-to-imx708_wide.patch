@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: NXP-MR <meta-nxp-mr@nxp.com>
+Date: Thu, 23 Jul 2026 16:40:00 +0200
+Subject: [PATCH] ipa: nxp: cam_helper: Extend imx708 to imx708_wide
+
+The NXP neo IPA resolves its per-sensor CameraHelper through its own
+factory (CameraHelperFactoryBase::create(sensorModel) in neo_ipa.cpp),
+which is independent of the generic libipa CameraSensorHelper registry.
+
+The NAVQ95 ships the Raspberry Pi Camera Module 3 Wide, whose sensor
+reports the model string "imx708_wide". Without a matching NXP camera
+helper, neo_ipa.cpp fails with:
+
+    Failed to create camera sensor helper for imx708_wide
+
+and the NxpNeo pipeline fails to initialise the IPA.
+
+The wide module uses the same imx708 sensor (identical analogue gain
+model), only a different lens, so register an "imx708_wide" helper that
+subclasses CameraHelperImx708 and reuses its gain conversions.
+
+Upstream-Status: Inappropriate [RPi-specific sensor model suffix]
+
+Signed-off-by: NXP-MR <meta-nxp-mr@nxp.com>
+---
+ src/ipa/nxp/cam_helper/camera_helper_imx708.cpp | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/ipa/nxp/cam_helper/camera_helper_imx708.cpp b/src/ipa/nxp/cam_helper/camera_helper_imx708.cpp
+index 90edeb2..431adba 100644
+--- a/src/ipa/nxp/cam_helper/camera_helper_imx708.cpp
++++ b/src/ipa/nxp/cam_helper/camera_helper_imx708.cpp
+@@ -32,6 +32,16 @@ double CameraHelperImx708::gain(uint32_t gainCode) const
+ 
+ REGISTER_CAMERA_HELPER("imx708", CameraHelperImx708)
+ 
++/*
++ * The Raspberry Pi Camera Module 3 Wide reports the sensor model as
++ * "imx708_wide". It is the same imx708 sensor with a different lens, so the
++ * gain model is identical; reuse the imx708 helper implementation.
++ */
++class CameraHelperImx708Wide : public CameraHelperImx708
++{
++};
++REGISTER_CAMERA_HELPER("imx708_wide", CameraHelperImx708Wide)
++
+ } /* namespace nxp */
+ 
+ } /* namespace libcamera */
+-- 
+2.34.1
