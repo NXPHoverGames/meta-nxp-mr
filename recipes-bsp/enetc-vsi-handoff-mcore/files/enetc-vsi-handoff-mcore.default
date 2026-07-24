@@ -1,0 +1,20 @@
+# /etc/default/enetc-vsi-handoff-mcore
+# Configuration for the enetc-vsi-handoff-mcore service (NavQ95 / i.MX95).
+# Hands ENETC VFs off to the Cortex-M7 so its Zephyr NETC-VSI driver works.
+
+# ENETC PF netdev(s) whose VF is handed to the M-core. Space-separated list;
+# both ENETC0 (end0) and ENETC2 (end1) are handed off by default. Note Linux
+# names netdevs logically (end0, end1, ...), which do not map 1:1 to the ENETC
+# hardware instance numbers.
+PFS="end0 end1"
+
+# VF index given to the M-core (0 or 1), applied to each PF above. The M7 board
+# DTS enables enetc0_vsi1 / enetc2_vsi1, i.e. VF1, so this is 1 by default.
+VF=1
+
+# MAC-level loopback: "off" for normal external connectivity (default),
+# "on" only for a local-only A55<->M7 link (severs the external wire).
+LOOPBACK=off
+
+# Number of VFs to instantiate on each PF (ENETC has 2).
+NUMVFS=2

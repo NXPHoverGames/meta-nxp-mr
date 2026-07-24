@@ -55,6 +55,7 @@ IMAGE_INSTALL:append:imx95-navq = " \
 	la9310-firmware \
 	linux-firmware-mali-csffw-arch1012 \
 	panvk-layer \
+    enetc-vsi-handoff-mcore \
 	"
 
 APTGET_EXTRA_PACKAGES += "\

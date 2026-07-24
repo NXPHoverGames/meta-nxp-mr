@@ -1,0 +1,131 @@
+#!/bin/sh
+# enetc-vsi-handoff-mcore - hand ENETC Virtual Station Interfaces (VFs) off
+# to the Cortex-M7 (M-core) so its Zephyr NETC-VSI driver can drive Ethernet.
+#
+# Runs on the Cortex-A55 (Linux), which owns the ENETC Physical Station
+# Interfaces (PFs). The M7 owns only a VF and cannot instantiate itself, so
+# Linux must: enable SR-IOV, keep Linux's own VF driver off the VF, let the VF
+# DMA and raise MSI-X, and "trust" the VF so the M7's mailbox MAC/multicast/VLAN
+# filter requests are honoured. A full-SoC reset reboots Linux and wipes all of
+# this, so this must run on every boot - hence the systemd unit.
+#
+# Config is read from ${DEFAULTS} (see below), then overridden by CLI args.
+#
+# Usage: enetc-vsi-handoff-mcore [-i "PF..."] [-f VF] [-l on|off] [-h]
+#   -i "PF..."   ENETC PF netdev(s) handed partly to the M-core (default
+#                "end0 end1"); space-separated list, quote if more than one
+#   -f VF        VF index given to the M-core (0 or 1)         (default 1)
+#   -l on|off    MAC-level loopback for a local A55<->M7 link  (default off)
+#                "on" severs the external wire for the whole port: the M-core
+#                can then reach only this board, not the outside network.
+#   -h           show this help and exit
+#
+# The PF netdevs must already exist when this runs. The systemd unit orders us
+# after each PF's "sys-subsystem-net-devices-<PF>.device" unit, so systemd (not
+# a poll loop here) is what waits for the interfaces to appear.
+
+set -eu
+
+DEFAULTS=/etc/default/enetc-vsi-handoff-mcore
+
+# Defaults (overridable by the file above, then by CLI flags).
+PFS="end0 end1"
+VF=1
+LOOPBACK=off
+NUMVFS=2
+
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
+TAG=enetc-vsi-handoff-mcore
+# Under systemd, stdout/stderr go to the journal as a single stream at one
+# priority. Emit kmsg-style level prefixes (parsed and stripped by the journal)
+# so err/die register as errors; skip them for interactive runs so terminal
+# output stays clean. systemd sets $JOURNAL_STREAM when connected to the journal.
+if [ -n "${JOURNAL_STREAM:-}" ]; then P_INFO='<6>'; P_ERR='<3>'; else P_INFO=''; P_ERR=''; fi
+log()  { echo "${P_INFO}$TAG: $*"; }
+err()  { echo "${P_ERR}$TAG: error: $*" >&2; }
+die()  { err "$*"; exit 1; }
+
+usage() {
+	sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+	exit "${1:-0}"
+}
+
+while getopts "i:f:l:h" opt; do
+	case "$opt" in
+	i) PFS=$OPTARG ;;
+	f) VF=$OPTARG ;;
+	l) LOOPBACK=$OPTARG ;;
+	h) usage 0 ;;
+	*) usage 1 ;;
+	esac
+done
+
+case "$VF" in 0 | 1) ;; *) die "VF must be 0 or 1 (got '$VF')" ;; esac
+case "$LOOPBACK" in on | off) ;; *) die "loopback must be on or off (got '$LOOPBACK')" ;; esac
+[ -n "$PFS" ] || die "no PF netdev configured (PFS is empty)"
+[ "$(id -u)" = 0 ] || die "must run as root"
+
+for tool in setpci ip ethtool; do
+	command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
+done
+
+# Provision one PF: enable SR-IOV, then hand its VF$VF off to the M-core.
+handoff_pf() {
+	PF=$1
+
+	# systemd orders us after this PF's device unit, so the netdev should
+	# already be present; fail clearly if it is not.
+	[ -e "/sys/class/net/$PF/device" ] || die "PF netdev '$PF' not present"
+
+	pf=$(basename "$(readlink -f "/sys/class/net/$PF/device")")
+	pfdev="/sys/bus/pci/devices/$pf"
+	log "PF $PF -> $pf"
+
+	# Keep Linux's fsl_enetc_vf off the VFs *before* creating them, so the VF
+	# is left free for the M-core. Idempotent: only (re)create if the count
+	# differs.
+	echo 0 > "$pfdev/sriov_drivers_autoprobe"
+	if [ "$(cat "$pfdev/sriov_numvfs")" != "$NUMVFS" ]; then
+		echo 0 > "$pfdev/sriov_numvfs"
+		echo "$NUMVFS" > "$pfdev/sriov_numvfs"
+		log "instantiated $NUMVFS VFs on $PF"
+	else
+		log "$NUMVFS VFs already present on $PF"
+	fi
+
+	[ -e "$pfdev/virtfn$VF" ] || die "VF$VF not present under $pf"
+	vf=$(basename "$(readlink -f "$pfdev/virtfn$VF")")
+	log "M-core VF$VF -> $vf"
+
+	# Bus-Master-Enable: let the VF DMA (BD rings + packet buffers). Unbound in
+	# Linux (autoprobe=0), so its SMMU stream is untranslated and needs no IOMMU
+	# setup. MSE is hardwired 0 on a VF; bit1 (BME) is what we set.
+	setpci -s "$vf" COMMAND=0x0006
+
+	# Enable the VF's MSI-X function. VF config space is read-only to the
+	# M-core, so the PF (us) must set the MSI-X enable bit for M7 interrupts to
+	# work.
+	setpci -s "$vf" CAP_MSIX+2.w=0x8000:0x8000
+
+	# Trust the VF so the PF honours the M-core's mailbox filter requests
+	# (primary MAC, multicast hash, VLAN hash). Without trust they are denied
+	# and the M7 receives only broadcast.
+	ip link set "$PF" vf "$VF" trust on
+
+	# Optional MAC-level loopback for a local-only A55<->M7 IP link (see -l).
+	ethtool -K "$PF" loopback "$LOOPBACK" 2>/dev/null || \
+		log "warning: could not set loopback $LOOPBACK on $PF (unsupported?)"
+
+	log "$PF VF$VF ($vf) handed off to the M-core."
+}
+
+for PF in $PFS; do
+	handoff_pf "$PF"
+done
+
+if [ "$LOOPBACK" = on ]; then
+	log "loopback ON: M-core reaches THIS board only (external wire severed)."
+else
+	log "loopback OFF: M-core reaches the external network."
+fi

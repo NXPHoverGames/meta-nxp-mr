@@ -1,0 +1,24 @@
+[Unit]
+Description=Hand ENETC VSIs (VFs) off to the Cortex-M7 (M-core)
+Documentation=https://github.com/NXP-Robotics/meta-nxp-mr
+# The PF netdevs must exist and PCI/SR-IOV must be available before we run.
+# Gate startup on the PF device units so systemd waits for the interfaces to
+# appear (replacing the old in-script poll loop). If a PF is renamed or a
+# different port is targeted in /etc/default/enetc-vsi-handoff-mcore, update the
+# device names below to match (systemd cannot read the EnvironmentFile for
+# ordering).
+Wants=network-pre.target sys-subsystem-net-devices-end0.device sys-subsystem-net-devices-end1.device
+After=network-pre.target systemd-udev-settle.service sys-subsystem-net-devices-end0.device sys-subsystem-net-devices-end1.device
+Before=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/etc/default/enetc-vsi-handoff-mcore
+# All configuration comes from the EnvironmentFile; the script reads it directly.
+ExecStart=/usr/sbin/enetc-vsi-handoff-mcore
+# A full-SoC reset reboots Linux and wipes SR-IOV, so this simply re-runs at
+# every boot. No ExecStop: tearing the VF down is not wanted on shutdown.
+
+[Install]
+WantedBy=multi-user.target
