@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: NXP-MR <meta-nxp-mr@nxp.com>
+Date: Thu, 24 Jul 2026 16:45:00 +0200
+Subject: [PATCH] dpuv2: Select DPU render node by driver name
+
+dpuOpen() hard-codes DRM render node minor 128 (/dev/dri/renderD128).
+DRM render node minors are assigned in driver registration order, so
+this only works when the DPU is the first DRM driver to register a
+render node.
+
+On i.MX95 the DPU display controller is built into the kernel but
+defers its probe during early boot (waiting on clocks/power). When the
+Mesa/panthor graphics stack is used, the Mali GPU (panthor) is loaded
+as a module by udev and registers its render node first, taking
+renderD128 and pushing the DPU render node to renderD129. dpuOpen()
+then opens the panthor node, the DPU version ioctl fails with
+
+    ERROR: invalid version of dpu devices returned
+
+and every g2d blit silently produces black output (breaking
+imxvideoconvert_g2d, imxcompositor_g2d, etc.).
+
+With the legacy proprietary Mali driver (mali_kbase) this did not
+happen because that driver exposes a character device instead of a DRM
+render node, so the DPU always ended up on renderD128.
+
+Instead of assuming a fixed minor, scan the render nodes and pick the
+one whose DRM driver name identifies the DPU. Fall back to the historic
+fixed node if none matches.
+
+Upstream-Status: Pending
+
+Signed-off-by: NXP-MR <meta-nxp-mr@nxp.com>
+---
+--- a/dpuv2/hardware/dpu_ioctl.c
++++ b/dpuv2/hardware/dpu_ioctl.c
+@@ -77,10 +77,42 @@
+ 	int fd;
+ 
+ #if defined(OPENDRMDEVICE)
+-	int drm_minor = 128;
++	int drm_minor;
+ 
+-	fd = drmOpenRender(drm_minor);
++	/*
++	 * The DPU 2D blit engine is exposed as a DRM render node. Its minor
++	 * number is assigned in DRM registration order and is therefore not
++	 * guaranteed to be 128: when another DRM driver (e.g. the Mali GPU
++	 * driver on i.MX95 when using the Mesa/panthor stack) registers a
++	 * render node first, the DPU node is pushed to a higher minor. Scan
++	 * the render nodes and pick the one whose DRM driver name identifies
++	 * the DPU instead of assuming render node 128.
++	 */
++	fd = -1;
++	for (drm_minor = 128; drm_minor < 128 + 16; drm_minor++) {
++		int candidate = drmOpenRender(drm_minor);
++		drmVersionPtr version;
+ 
++		if (candidate < 0)
++			continue;
++
++		version = drmGetVersion(candidate);
++		if (version != NULL) {
++			int is_dpu = (version->name != NULL) &&
++				     (strstr(version->name, "dpu") != NULL);
++
++			drmFreeVersion(version);
++			if (is_dpu) {
++				fd = candidate;
++				break;
++			}
++		}
++		drmClose(candidate);
++	}
++
++	/* Fall back to the historical fixed render node if none matched. */
++	if (fd < 0)
++		fd = drmOpenRender(128);
+ 
+ #elif defined(EXTERN_IOCTL)
+ 	fd = open_handler(DPU_DEVICE_NAME, O_RDWR, 0);
+-- 
+2.34.1
+
